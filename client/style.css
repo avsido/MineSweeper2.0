@@ -9,7 +9,6 @@ body {
     text-align: center;
     display: flex;
     flex-direction: column;
-    
     margin: 0; /* Removes default margin to ensure the body takes up the full viewport */
     height: 100vh; /* Ensures the body takes up the full height of the viewport */
 }
@@ -22,11 +21,65 @@ body {
     text-align: center;
     border: 5px solid rgba(153, 0, 0, 0.48);
     border-radius: 20px;
-    width: 800px; /* Fixed width */
-    height: 560px; /* Fixed height */
+    min-width: 800px; 
+    min-height: 560px; 
     background-color: rgba(5, 183, 53, 0.11);
     margin: 5px;
     padding: 5px;
-    overflow: hidden; /* Prevent scrollbars */
+    overflow: hidden;
+    justify-content: space-around;
+}
+
+.header{
+    background-color: #8bc34a52;
+    margin:2px; 
+    padding:2px;
+    border: 2px solid rgb(153 0 0 / 65%);
+    display: flex;
+    flex-direction: row;
+    width: 90%;
+    justify-content: space-around;
+    height: 10%;
+    align-items: center;
+    
+}
+.header p{
+    background-color: #009688;
+    padding: 8px;
+    color: white;
+    font-family:fantasy;
+}
+.header img{
+    
+    width: 45px;
+    height: 45px;
+}
+.divBoard{
+    border: 35px solid #ff00005c;
+}
+
+.divRow{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    height: 30px;
+    width: auto;
+    display: flex;
+}
+.cell{
+    border: 1px solid white;
+    width: 30px;
+    height: 30px;
+    display: inline-block;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    padding-top: 3px;
+    /*color: blue;*/
+    font-weight: bolder;
+}
+.cell:hover{
+    border: 1px solid red;
+    z-index: 1;
 }
   

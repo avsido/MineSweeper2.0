@@ -27,9 +27,10 @@ const query = (sql, params) => {
 // Middleware for authentication
 router.use(async (req, res, next) => {
   const token = req.headers["authorization"];
+  const jwtSecret = process.env.JWT_SECRET;
   if (token) {
     try {
-      const decoded = jwt.verify(token, "your-secret-key"); // Replace with your secret key
+      const decoded = jwt.verify(token, jwtSecret); // Replace with your secret key
       req.userId = decoded.id; // Set user ID on the request object
     } catch (error) {
       console.error("Invalid token:", error);
@@ -106,28 +107,36 @@ router.post("/signin", async (req, res) => {
 });
 
 router.get("/tap_square", async (req, res) => {
-  const { gameId, x, y } = req.query;
-
+  let { gameId, i, j } = req.query;
+  i = parseInt(i);
+  j = parseInt(j);
   if (!gameId || !games[gameId]) {
     return res.status(400).json({ message: "Invalid game ID" });
   }
-
-  const game = games[gameId];
-
-  try {
-    const result = game.tapSquare(parseInt(x), parseInt(y));
-    res.status(200).json(result);
-  } catch (error) {
-    console.error("Error tapping square:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  const mineField = games[gameId];
+  if (!mineField.gameOn) mineField.startGame(i, j);
+  console.log(mineField.getCell(i, j));
+  // try {
+  //   const result = game.tapSquare(parseInt(i), parseInt(j));
+  //   res.status(200).json(result);
+  // } catch (error) {
+  //   console.error("Error tapping square:", error);
+  //   res.status(500).json({ message: "Internal server error" });
+  // }
 });
 
 // Start game endpoint
 router.get("/start_game", async (req, res) => {
-  const factor = parseFloat(req.query.factor);
-  if (isNaN(factor)) {
-    return res.status(400).json({ message: "Invalid factor" });
+  const text = req.query.text;
+  let factor;
+  if (text == "easy") {
+    factor = 0.85;
+  } else if (text == "medium") {
+    factor = 0.8;
+  } else if (text == "hard") {
+    factor = 0.7;
+  } else {
+    return "invalid";
   }
 
   try {
@@ -137,7 +146,8 @@ router.get("/start_game", async (req, res) => {
 
     res.status(200).json({
       message: `Game started with difficulty factor: ${factor}`,
-      gameId: gameId, // Send the gameId back to the client
+      gameId: gameId,
+      mineField: mineField,
     });
   } catch (error) {
     console.error("Error starting game:", error);
@@ -152,7 +162,7 @@ async function fetchUserGames(res, userId) {
       [userId]
     );
 
-    res.status(200).json({ message: "success", gameResults });
+    res.status(200).json({ message: "success", gameResults: gameResults });
   } catch (error) {
     console.error("Error fetching user games:", error);
     res.status(500).json({ message: "Internal server error" });

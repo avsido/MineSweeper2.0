@@ -84,6 +84,9 @@ function signInUser() {
       } else {
         greet();
         alert("Hello " + userData.username);
+        if (res.gameResults && res.gameResults.length > 0) {
+          console.log(res.gameResults);
+        }
       }
     })
     .catch((error) => {
@@ -92,9 +95,9 @@ function signInUser() {
     });
 }
 
-function startGame(factor) {
+function startGame(text) {
   cleanElement(divMain);
-  const url = `/api/start_game?factor=${encodeURIComponent(factor)}`;
+  const url = "/api/start_game?text=" + text;
 
   fetch(url, {
     method: "GET",
@@ -104,7 +107,7 @@ function startGame(factor) {
   })
     .then((response) => response.json())
     .then((res) => {
-      currentGameId = res.gameId; // Store the gameId
+      currentGameId = res.gameId;
       render(res);
     })
     .catch((error) => {
@@ -115,32 +118,30 @@ function startGame(factor) {
 function greet() {
   cleanElement(divMain);
 
-  const easyButton = createLevelButton("EASY", 0.85);
-  const mediumButton = createLevelButton("MEDIUM", 0.8);
-  const hardButton = createLevelButton("HARD", 0.7);
+  const easyButton = createLevelButton("easy"); // 0.85
+  const mediumButton = createLevelButton("medium"); // 0.8
+  const hardButton = createLevelButton("hard"); // 0.7
 
   divMain.append(easyButton, mediumButton, hardButton);
 }
 
-function createLevelButton(text, factor) {
+function createLevelButton(text) {
   const button = document.createElement("button");
   button.innerHTML = text;
-  button.onclick = () => requestToStartGame(factor);
+  button.onclick = () => requestToStartGame(text);
   return button;
 }
 
-function requestToStartGame(factor) {
-  startGame(factor);
+function requestToStartGame(text) {
+  startGame(text);
 }
 
-function tapSquare(x, y) {
+function tapSquare(currentGameId, i, j) {
   if (!currentGameId) {
     alert("No active game!");
     return;
   }
-
-  const url = `/api/tap_square?gameId=${currentGameId}&x=${x}&y=${y}`;
-
+  const url = `/api/tap_square?gameId=${currentGameId}&i=${i}&j=${j}`;
   fetch(url, {
     method: "GET",
     headers: {
@@ -149,24 +150,10 @@ function tapSquare(x, y) {
   })
     .then((response) => response.json())
     .then((res) => {
-      // Handle the result (update UI, etc.)
-      console.log(res);
+      // console.log(res);
+      render(res);
     })
     .catch((error) => {
       alert("An error occurred: " + error);
     });
-}
-
-// Add this function if it's not already defined elsewhere
-function cleanElement(element) {
-  while (element.firstChild) {
-    element.removeChild(element.firstChild);
-  }
-}
-
-// Add this function if it's not already defined elsewhere
-function render(gameState) {
-  // Implement this function to render the game state
-  console.log("Rendering game state:", gameState);
-  // You'll need to create the game board UI here based on the gameState
 }
