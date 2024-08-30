@@ -41,6 +41,44 @@ router.use(async (req, res, next) => {
   next();
 });
 
+// Start game endpoint
+router.get("/start_game", async (req, res) => {
+  const text = req.query.text;
+  let factor;
+  if (text == "easy") {
+    factor = 0.85;
+  } else if (text == "medium") {
+    factor = 0.8;
+  } else if (text == "hard") {
+    factor = 0.7;
+  } else {
+    return "invalid";
+  }
+
+  try {
+    const gameId = Date.now().toString(); // Use a timestamp as a simple unique identifier
+    let mineField = new MineField(factor);
+    games[gameId] = mineField; // Store the game object
+    // console.log(mineField);
+    res.status(200).json({
+      // message: `Game started with difficulty factor: ${factor}`,
+      // gameId: gameId,
+      // mineField: mineField,
+      // board: mineField.board,
+      message: `Game started with difficulty factor: ${factor}`,
+      gameId: gameId,
+      board: mineField.board,
+      gameOn: mineField.gameOn,
+      rows: mineField.rows,
+      cols: mineField.cols,
+      flags: mineField.flags,
+    });
+  } catch (error) {
+    console.error("Error starting game:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // Register endpoint
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
@@ -108,14 +146,52 @@ router.post("/signin", async (req, res) => {
 
 router.get("/tap_square", async (req, res) => {
   let { gameId, i, j } = req.query;
-  i = parseInt(i);
-  j = parseInt(j);
+
   if (!gameId || !games[gameId]) {
     return res.status(400).json({ message: "Invalid game ID" });
   }
+
+  i = parseInt(i);
+  j = parseInt(j);
+
+  if (!validateIorJ(i) || !validateIorJ(j)) {
+    console.log(i);
+    console.log(j);
+    return res.status(200).json({ message: "invalid i or j" });
+  }
+
   const mineField = games[gameId];
-  if (!mineField.gameOn) mineField.startGame(i, j);
-  console.log(mineField.getCell(i, j));
+
+  if (!mineField.gameOn) {
+    mineField.startGame(i, j);
+    for (let k = 0; k < mineField.rows; k++) {
+      for (let l = 0; l < mineField.cols; l++) {
+        mineField.getCell(k, l).neighborMineCount = mineField.getMineCount(
+          k,
+          l
+        );
+      }
+    }
+  }
+
+  if (mineField.getCell(i, j).flagged) {
+    return;
+  }
+
+  mineField.revealMinesAroundMe(mineField, i, j);
+
+  let pseudoBoard = pseudoizeBoard(mineField.board);
+
+  res.status(200).json({
+    message: `tapped square`,
+    gameId: gameId,
+    board: pseudoBoard,
+    gameOn: mineField.gameOn,
+    rows: mineField.rows,
+    cols: mineField.cols,
+    flags: mineField.flags,
+  });
+
   // try {
   //   const result = game.tapSquare(parseInt(i), parseInt(j));
   //   res.status(200).json(result);
@@ -125,34 +201,38 @@ router.get("/tap_square", async (req, res) => {
   // }
 });
 
-// Start game endpoint
-router.get("/start_game", async (req, res) => {
-  const text = req.query.text;
-  let factor;
-  if (text == "easy") {
-    factor = 0.85;
-  } else if (text == "medium") {
-    factor = 0.8;
-  } else if (text == "hard") {
-    factor = 0.7;
+router.get("/place_flag", async (req, res) => {
+  let { gameId, i, j } = req.query;
+  i = parseInt(i);
+  j = parseInt(j);
+  if (!gameId || !games[gameId]) {
+    return res.status(400).json({ message: "Invalid game ID" });
+  }
+  const mineField = games[gameId];
+
+  if (mineField.getCell(i, j).flagged) {
+    res.status(200).json({ message: "Already Flagged Bro.." });
   } else {
-    return "invalid";
+    mineField.flags -= 1;
+    mineField.getCell(i, j).flagged = true;
   }
-
-  try {
-    const gameId = Date.now().toString(); // Use a timestamp as a simple unique identifier
-    let mineField = new MineField(factor);
-    games[gameId] = mineField; // Store the game object
-
-    res.status(200).json({
-      message: `Game started with difficulty factor: ${factor}`,
-      gameId: gameId,
-      mineField: mineField,
-    });
-  } catch (error) {
-    console.error("Error starting game:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  // try {
+  //   const result = game.tapSquare(parseInt(i), parseInt(j));
+  //   res.status(200).json(result);
+  // } catch (error) {
+  //   console.error("Error tapping square:", error);
+  //   res.status(500).json({ message: "Internal server error" });
+  // }
+  let pseudoBoard = pseudoizeBoard(mineField.board);
+  res.status(200).json({
+    message: `placed flag`,
+    gameId: gameId,
+    board: pseudoBoard,
+    gameOn: mineField.gameOn,
+    rows: mineField.rows,
+    cols: mineField.cols,
+    flags: mineField.flags,
+  });
 });
 
 async function fetchUserGames(res, userId) {
@@ -167,6 +247,33 @@ async function fetchUserGames(res, userId) {
     console.error("Error fetching user games:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+}
+
+function validateIorJ(IorJ) {
+  if (isNaN(IorJ)) {
+    return false;
+  }
+  if (typeof IorJ != "number") {
+    return false;
+  }
+  if (!Number.isInteger(IorJ)) {
+    return false;
+  }
+  return true;
+}
+
+function pseudoizeBoard(board) {
+  // console.log(board);
+  let pseudoBoard = JSON.parse(JSON.stringify(board));
+
+  for (let i = 0; i < board.length; i++) {
+    if (!pseudoBoard[i].checked) {
+      pseudoBoard[i].isMine = 0;
+    }
+  }
+  // console.log(pseudoBoard);
+
+  return pseudoBoard;
 }
 
 module.exports = router;

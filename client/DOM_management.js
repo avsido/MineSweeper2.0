@@ -108,6 +108,7 @@ function startGame(text) {
     .then((response) => response.json())
     .then((res) => {
       currentGameId = res.gameId;
+      console.log(res);
       render(res);
     })
     .catch((error) => {
@@ -150,7 +151,29 @@ function tapSquare(currentGameId, i, j) {
   })
     .then((response) => response.json())
     .then((res) => {
-      // console.log(res);
+      console.log(res);
+      render(res);
+    })
+    .catch((error) => {
+      alert("An error occurred: " + error);
+    });
+}
+
+function placeFlag(currentGameId, i, j) {
+  if (!currentGameId) {
+    alert("No active game!");
+    return;
+  }
+  const url = `/api/place_flag?gameId=${currentGameId}&i=${i}&j=${j}`;
+  fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => response.json())
+    .then((res) => {
+      //console.log(res);
       render(res);
     })
     .catch((error) => {
