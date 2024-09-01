@@ -155,14 +155,14 @@ router.get("/tap_square", async (req, res) => {
   j = parseInt(j);
 
   if (!validateIorJ(i) || !validateIorJ(j)) {
-    console.log(i);
-    console.log(j);
+    // console.log(i);
+    // console.log(j);
     return res.status(200).json({ message: "invalid i or j" });
   }
 
   const mineField = games[gameId];
 
-  if (!mineField.gameOn) {
+  if (!mineField.gameOn.hasStarted) {
     mineField.startGame(i, j);
     for (let k = 0; k < mineField.rows; k++) {
       for (let l = 0; l < mineField.cols; l++) {
@@ -174,7 +174,40 @@ router.get("/tap_square", async (req, res) => {
     }
   }
 
+  if (mineField.getCell(i, j).isMine == 1) {
+    mineField.gameOn.gameOver = true;
+    // HERE I will handle filling the DB in case of LOSS //
+    res.status(200).json({
+      message: `GAME OVER!`,
+      gameId: gameId,
+      gameOver: mineField.gameOn.gameOver,
+      youWin: mineField.gameOn.youWin,
+      board: mineField.board,
+      gameOn: mineField.gameOn,
+      rows: mineField.rows,
+      cols: mineField.cols,
+      flags: mineField.flags,
+    });
+    return;
+  }
   if (mineField.getCell(i, j).flagged) {
+    return;
+  }
+
+  if (mineField.checkWin()) {
+    mineField.gameOn.gameOver = true;
+    mineField.gameOn.youWin = true;
+    // HERE I will handle filling the DB in case of LOSS //
+    res.status(200).json({
+      message: `YOU WIN!`,
+      gameId: gameId,
+      gameOver: mineField.gameOn.gameOver,
+      youWin: mineField.gameOn.youWin,
+      board: mineField.board,
+      rows: mineField.rows,
+      cols: mineField.cols,
+      flags: mineField.flags,
+    });
     return;
   }
 
@@ -191,14 +224,6 @@ router.get("/tap_square", async (req, res) => {
     cols: mineField.cols,
     flags: mineField.flags,
   });
-
-  // try {
-  //   const result = game.tapSquare(parseInt(i), parseInt(j));
-  //   res.status(200).json(result);
-  // } catch (error) {
-  //   console.error("Error tapping square:", error);
-  //   res.status(500).json({ message: "Internal server error" });
-  // }
 });
 
 router.get("/place_flag", async (req, res) => {
@@ -206,23 +231,21 @@ router.get("/place_flag", async (req, res) => {
   i = parseInt(i);
   j = parseInt(j);
   if (!gameId || !games[gameId]) {
-    return res.status(400).json({ message: "Invalid game ID" });
+    return res.status(400).json({ message: "Invalid Game ID" });
   }
+
   const mineField = games[gameId];
 
   if (mineField.getCell(i, j).flagged) {
-    res.status(200).json({ message: "Already Flagged Bro.." });
+    return res.status(200).json({ message: "Already Flagged.." });
   } else {
+    if (mineField.flags == 0) {
+      return res.status(200).json({ message: "No More Flags.." });
+    }
     mineField.flags -= 1;
     mineField.getCell(i, j).flagged = true;
   }
-  // try {
-  //   const result = game.tapSquare(parseInt(i), parseInt(j));
-  //   res.status(200).json(result);
-  // } catch (error) {
-  //   console.error("Error tapping square:", error);
-  //   res.status(500).json({ message: "Internal server error" });
-  // }
+
   let pseudoBoard = pseudoizeBoard(mineField.board);
   res.status(200).json({
     message: `placed flag`,
@@ -269,6 +292,7 @@ function pseudoizeBoard(board) {
   for (let i = 0; i < board.length; i++) {
     if (!pseudoBoard[i].checked) {
       pseudoBoard[i].isMine = 0;
+      pseudoBoard[i].neighborMineCount = 0;
     }
   }
   // console.log(pseudoBoard);

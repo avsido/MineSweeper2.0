@@ -1,6 +1,6 @@
 class MineField {
   constructor(factor) {
-    this.gameOn = false;
+    this.gameOn = { hasStarted: false, gameOver: false, youWin: false };
     this.factor = factor;
     this.rows = null;
     this.cols = null;
@@ -33,7 +33,7 @@ class MineField {
   }
 
   startGame(x, y) {
-    this.gameOn = true;
+    this.gameOn.hasStarted = true;
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
         if (Math.abs(i - x) >= 2 || Math.abs(j - y) >= 2) {
@@ -116,38 +116,6 @@ class MineField {
       mineField.revealMinesAroundMe(mineField, i + 1, j - 1);
   }
 
-  // isShouldReveal(i, j) {
-  //   let rows = this.rows;
-  //   let cols = this.cols;
-
-  //   // decides how much further cells to reveal.
-  //   if (i > 0 && j > 0 && this.getCell(i - 1, j - 1).neighborMineCount == 0)
-  //     return true;
-  //   if (i > 0 && this.getCell(i - 1, j).neighborMineCount == 0) return true;
-  //   if (
-  //     i > 0 &&
-  //     j < cols - 1 &&
-  //     this.getCell(i - 1, j + 1).neighborMineCount == 0
-  //   )
-  //     return true;
-  //   if (j < cols - 1 && this.getCell(i, j + 1).neighborMineCount == 0)
-  //     return true;
-  //   if (
-  //     i < rows - 1 &&
-  //     j < cols - 1 &&
-  //     this.getCell(i + 1, j + 1).neighborMineCount == 0
-  //   )
-  //     return true;
-  //   if (i < rows - 1 && this.getCell(i + 1, j).neighborMineCount == 0)
-  //     return true;
-  //   if (j > 0 && this.getCell(i, j - 1).neighborMineCount == 0) return true;
-  //   if (
-  //     i < rows - 1 &&
-  //     j > 0 &&
-  //     this.getCell(i + 1, j - 1).neighborMineCount == 0
-  //   )
-  //     return true;
-  // }
   isShouldReveal(mineField, i, j) {
     let rows = mineField.rows;
     let cols = mineField.cols;
@@ -185,6 +153,10 @@ class MineField {
       mineField.getCell(i + 1, j - 1).neighborMineCount == 0
     )
       return true;
+  }
+
+  checkWin() {
+    // console.log("checking win");
   }
 }
 

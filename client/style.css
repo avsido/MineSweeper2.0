@@ -1,37 +1,112 @@
 body {
-    background-image: url('images/bg.jpg'); /* Replace with your background image URL */
-    background-size: cover; /* Ensures the background image covers the entire body */
-    background-attachment: fixed; /* Keeps the background image static and prevents it from scrolling */
-    background-position: center; /* Centers the background image */
-    background-repeat: no-repeat; /* Prevents the background image from repeating */
+    background-image: url('images/bg.jpg');
+    background-size: cover;
+    background-attachment: fixed; 
+    background-position: center; 
+    background-repeat: no-repeat; 
     align-items: center;
     justify-content: center;
     text-align: center;
     display: flex;
     flex-direction: column;
-    margin: 0; /* Removes default margin to ensure the body takes up the full viewport */
-    height: 100vh; /* Ensures the body takes up the full height of the viewport */
+    margin: 0; 
+    height: 100vh; 
 }
 
-.divMain{
+.titleSpan{
+    margin: 0px;
+}
+
+.titleSpan h1{
+    
+    font-family: "New Amsterdam", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+      
+}
+
+
+
+#divMain{
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    border: 5px solid rgba(153, 0, 0, 0.48);
+    /*border: 5px solid rgba(153, 0, 0, 0.48);*/
     border-radius: 5px;
     min-width: 800px; 
     min-height: 560px; 
-    background-color: rgba(5, 183, 53, 0.11);
+    background-color: rgba(255, 255, 255, 0.319);
     margin: 5px;
     padding: 5px;
     overflow: hidden;
     justify-content: space-around;
 }
 
+.hello{
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    color: #973737;
+}
+
+.divInputsNButts{
+    width: 50%;
+    height: 50%;
+    margin: 15px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    justify-content: space-around;
+    border-radius: 10px;
+    background-color: #808080a3;
+    border: 15px solid lightgray;
+    align-items: center;
+    
+}
+
+.divInputsNButts h1, h2{
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    color: #973737;
+}
+
+
+.divInputsNButts p{
+    font-family:fantasy;
+}
+
+.divInputsNButts input{
+    padding: 5px;
+    border-radius: 15px;
+    border: none;
+    margin-right: 12px;
+    margin-left: 6px;
+    text-align: center;
+}
+.divInputsNButts button{
+    padding:8px;
+    border-radius: 5px;
+    border: 2px solid white;
+    color: white;
+    background-color: #000000e0;
+    justify-content: center;
+}
+
+.input{
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+    /*border: 2px solid black;*/
+    justify-content: space-around;
+}
+
+.or{
+    margin: 10px;
+}
+
 .header{
-    background-color: #8bc34a52;
+    background-color: #57c34a52;
     margin:2px; 
     padding:2px;
     border: 2px solid rgb(153 0 0 / 65%);
@@ -55,7 +130,8 @@ body {
     height: 45px;
 }
 .divBoard{
-    border: 35px solid #ff00005c;
+    
+    border: 25px solid #ff00005c;
 }
 
 .divRow{
@@ -75,14 +151,29 @@ body {
     margin: 0;
     padding: 0;
     padding-top: 3px;
-    /*color: blue;*/
     font-weight: bolder;
+    font-family:fantasy;
 }
-.cell:hover{
-    border: 1px solid red;
-    z-index: 1;
+.cell-hover {
+    background-color: red;
 }
-/* .checked{
-    background-color: rgb(206, 206, 19);
-} */
+.divConclude{
+    padding: 25px;
+    background-color: #808080a3;
+    border: 15px solid lightgray;
+    color: black;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    font-family:fantasy;
+    border-radius: 5px;
+}
+.divConclude p{
+    padding: 5px;
+    background-color: #d6d631;
+    border-radius: 5px;
+}
+
+
+    
   
