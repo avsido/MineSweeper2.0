@@ -45,11 +45,11 @@ router.use(async (req, res, next) => {
 router.get("/start_game", async (req, res) => {
   const text = req.query.text;
   let factor;
-  if (text == "easy") {
+  if (text == "EASY") {
     factor = 0.85;
-  } else if (text == "medium") {
+  } else if (text == "MEDIUM") {
     factor = 0.8;
-  } else if (text == "hard") {
+  } else if (text == "HARD") {
     factor = 0.7;
   } else {
     return "invalid";
@@ -61,10 +61,6 @@ router.get("/start_game", async (req, res) => {
     games[gameId] = mineField; // Store the game object
     // console.log(mineField);
     res.status(200).json({
-      // message: `Game started with difficulty factor: ${factor}`,
-      // gameId: gameId,
-      // mineField: mineField,
-      // board: mineField.board,
       message: `Game started with difficulty factor: ${factor}`,
       gameId: gameId,
       board: mineField.board,
@@ -235,20 +231,20 @@ router.get("/place_flag", async (req, res) => {
   }
 
   const mineField = games[gameId];
+  let message = " ";
 
-  if (mineField.getCell(i, j).flagged) {
-    return res.status(200).json({ message: "Already Flagged.." });
+  if (!mineField.getCell(i, j).flagged) {
+    message = "placed flag";
   } else {
-    if (mineField.flags == 0) {
-      return res.status(200).json({ message: "No More Flags.." });
-    }
-    mineField.flags -= 1;
-    mineField.getCell(i, j).flagged = true;
+    message = "removed flag";
   }
 
+  mineField.placeFlag(mineField, i, j);
+
   let pseudoBoard = pseudoizeBoard(mineField.board);
+
   res.status(200).json({
-    message: `placed flag`,
+    message: message,
     gameId: gameId,
     board: pseudoBoard,
     gameOn: mineField.gameOn,

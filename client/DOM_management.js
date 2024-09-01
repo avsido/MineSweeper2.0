@@ -147,7 +147,7 @@ function startGame(text) {
     .then((response) => response.json())
     .then((res) => {
       currentGameId = res.gameId;
-      console.log(res);
+      // console.log(res);
       render(res);
     })
     .catch((error) => {
@@ -191,7 +191,7 @@ function placeFlag(currentGameId, i, j) {
   })
     .then((response) => response.json())
     .then((res) => {
-      //console.log(res);
+      console.log(res.board);
 
       render(res);
     })

@@ -97,11 +97,11 @@ function render(gameState) {
       if (!gameOver) {
         cell.onclick = (ev) => {
           tapSquare(currentGameId, i, j);
-          cell.style.pointerEvents = "none";
+          // cell.style.pointerEvents = "none";
 
-          setTimeout(() => {
-            cell.style.pointerEvents = "auto";
-          }, 1200);
+          // setTimeout(() => {
+          //   cell.style.pointerEvents = "auto";
+          // }, 1200);
         };
         cell.oncontextmenu = (ev) => {
           ev.preventDefault();
@@ -110,7 +110,7 @@ function render(gameState) {
 
           setTimeout(() => {
             cell.style.pointerEvents = "auto";
-          }, 1200);
+          }, 10);
         };
       }
     }

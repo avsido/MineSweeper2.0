@@ -5,16 +5,19 @@ class MineField {
     this.rows = null;
     this.cols = null;
     if (factor == 0.85) {
+      //easy
       this.rows = 8;
       this.cols = 10;
       this.flags = 10;
     } else if (factor == 0.8) {
-      this.rows = 14;
-      this.cols = 18;
+      //medium
+      this.rows = 10;
+      this.cols = 10;
       this.flags = 44;
     } else if (factor == 0.7) {
-      this.rows = 20;
-      this.cols = 44;
+      //hard
+      this.rows = 12;
+      this.cols = 14;
       this.flags = 90;
     }
 
@@ -153,6 +156,21 @@ class MineField {
       mineField.getCell(i + 1, j - 1).neighborMineCount == 0
     )
       return true;
+  }
+
+  placeFlag(mineField, i, j) {
+    if (mineField.getCell(i, j).flagged) {
+      // remove flag
+
+      mineField.getCell(i, j).flagged = false;
+      mineField.flags += 1;
+    } else {
+      //add flag
+      if (mineField.flags == 0) return;
+
+      mineField.getCell(i, j).flagged = true;
+      mineField.flags -= 1;
+    }
   }
 
   checkWin() {
