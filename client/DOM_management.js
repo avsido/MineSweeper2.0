@@ -149,6 +149,12 @@ function startGame(text) {
     .then((response) => response.json())
     .then((res) => {
       render(res);
+      let t = res.t;
+      runTime(t);
+      setInterval(() => {
+        t += 1;
+        runTime(t);
+      }, 1000);
     })
     .catch((error) => {
       alert("An error occurred: " + error);
@@ -191,7 +197,7 @@ function placeFlag(currentGameId, i, j) {
   })
     .then((response) => response.json())
     .then((res) => {
-      console.log(res.board);
+      //console.log(res.board);
 
       render(res);
     })
@@ -200,8 +206,9 @@ function placeFlag(currentGameId, i, j) {
     });
 }
 
-function setTime(t) {
+function runTime(t) {
   let clock = document.getElementById("clock");
-  cleanElement(clock);
-  clock.innerHTML = "time: " + t + "'s";
+  if (clock) {
+    clock.innerHTML = "time: " + t + "s";
+  }
 }

@@ -1,7 +1,18 @@
+// function cleanElement(element) {
+//   // empties DOM element of all children
+
+//   while (element.lastElementChild) {
+//     element.removeChild(element.lastElementChild);
+//   }
+// }
+
 function cleanElement(element) {
-  // empties DOM element of all children
-  while (element.lastElementChild) {
-    element.removeChild(element.lastElementChild);
+  for (let i = element.children.length - 1; i >= 0; i--) {
+    const child = element.children[i];
+
+    if (child.id !== "clock") {
+      element.removeChild(child);
+    }
   }
 }
 

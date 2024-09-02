@@ -68,6 +68,8 @@ router.get("/start_game", async (req, res) => {
       rows: mineField.rows,
       cols: mineField.cols,
       flags: mineField.flags,
+      hasStarted: mineField.time.hasStarted,
+      t: mineField.time.t,
     });
   } catch (error) {
     console.error("Error starting game:", error);

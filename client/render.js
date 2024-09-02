@@ -1,7 +1,7 @@
 function render(gameState) {
   // console.log(gameState.mineField);
-  cleanElement(divMain);
-  console.log(gameState);
+
+  //console.log(gameState);
   let currentGameId = gameState.gameId;
   let gameOver = gameState.gameOn.gameOver;
   let youWin = gameState.gameOn.youWin;
@@ -15,17 +15,27 @@ function render(gameState) {
   divHeader.id = "divHeader";
   let clock = document.createElement("p");
   clock.style.minWidth = "80px";
+  clock.style.zIndex = 1;
   clock.id = "clock";
 
+  //clock.innerHTML = "time: " + t;
+
   let smileyFace = document.createElement("img");
+  smileyFace.id = "smileyFace";
   smileyFace.src = "images/happy.png";
   let pFlags = document.createElement("p");
-  pFlags.innerHTML = "flags: " + flags;
-  divHeader.append(clock, smileyFace, pFlags);
-  divMain.appendChild(divHeader);
-
+  //pFlags.innerHTML = "flags: " + flags;
+  pFlags.id = "pFlags";
+  //console.log(gameState.gameOn.hasStarted);
+  if (!gameState.gameOn.hasStarted) {
+    divHeader.append(clock, smileyFace, pFlags);
+    divMain.appendChild(divHeader);
+  }
+  document.getElementById("pFlags").innerHTML = "flags: " + flags;
   let divBoard = document.createElement("div");
+
   divBoard.className = "divBoard";
+  divBoard.id = "board";
   for (let i = 0; i < rows; i++) {
     let divRow = document.createElement("div");
     divBoard.appendChild(divRow);
@@ -124,7 +134,7 @@ function render(gameState) {
       cells[i].style.pointerEvents = "none";
     }
     //console.log(cells);
-    smileyFace.src = "images/sad.png";
+    document.getElementById("smileyFace").src = "images/sad.png";
     let divConclude = document.createElement("div");
     divConclude.className = "divConclude";
     let pMessage = document.createElement("p");
@@ -139,6 +149,11 @@ function render(gameState) {
     };
     divConclude.append(pMessage, buttReturn);
     divMain.appendChild(divConclude);
+  }
+
+  const existingBoard = document.getElementById("board");
+  if (existingBoard && divMain.contains(existingBoard)) {
+    divMain.removeChild(existingBoard);
   }
   divMain.appendChild(divBoard);
 }

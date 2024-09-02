@@ -1,7 +1,7 @@
 class MineField {
   constructor(factor) {
     this.gameOn = { hasStarted: false, gameOver: false, youWin: false };
-    this.time = null;
+    this.time = { t: 0, hasStarted: false };
     this.factor = factor;
     this.rows = null;
     this.cols = null;
@@ -38,6 +38,7 @@ class MineField {
 
   startGame(x, y) {
     this.gameOn.hasStarted = true;
+    this.time.hasStarted = true;
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
         if (Math.abs(i - x) >= 2 || Math.abs(j - y) >= 2) {
