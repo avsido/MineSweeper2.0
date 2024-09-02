@@ -1,24 +1,27 @@
 function render(gameState) {
   // console.log(gameState.mineField);
   cleanElement(divMain);
-
+  console.log(gameState);
+  let currentGameId = gameState.gameId;
   let gameOver = gameState.gameOn.gameOver;
   let youWin = gameState.gameOn.youWin;
   let cols = gameState.cols;
   let rows = gameState.rows;
   let flags = gameState.flags;
   let board = gameState.board;
-  let t;
 
   let divHeader = document.createElement("div");
   divHeader.className = "header";
-  let pTime = document.createElement("p");
-  pTime.innerHTML = t;
+  divHeader.id = "divHeader";
+  let clock = document.createElement("p");
+  clock.style.minWidth = "80px";
+  clock.id = "clock";
+
   let smileyFace = document.createElement("img");
   smileyFace.src = "images/happy.png";
   let pFlags = document.createElement("p");
-  pFlags.innerHTML = flags + " ";
-  divHeader.append(pTime, smileyFace, pFlags);
+  pFlags.innerHTML = "flags: " + flags;
+  divHeader.append(clock, smileyFace, pFlags);
   divMain.appendChild(divHeader);
 
   let divBoard = document.createElement("div");
@@ -97,35 +100,45 @@ function render(gameState) {
       if (!gameOver) {
         cell.onclick = (ev) => {
           tapSquare(currentGameId, i, j);
-          // cell.style.pointerEvents = "none";
+          ev.target.style.pointerEvents = "none";
 
-          // setTimeout(() => {
-          //   cell.style.pointerEvents = "auto";
-          // }, 1200);
+          setTimeout(() => {
+            ev.target.style.pointerEvents = "auto";
+          }, 10);
         };
         cell.oncontextmenu = (ev) => {
           ev.preventDefault();
           placeFlag(currentGameId, i, j);
-          cell.style.pointerEvents = "none";
+          ev.target.style.pointerEvents = "none";
 
           setTimeout(() => {
-            cell.style.pointerEvents = "auto";
+            ev.target.style.pointerEvents = "auto";
           }, 10);
         };
       }
     }
   }
   if (gameOver) {
+    let cells = divBoard.getElementsByClassName("cell");
+    for (let i = 0; i < cells.length; i++) {
+      cells[i].style.pointerEvents = "none";
+    }
+    //console.log(cells);
+    smileyFace.src = "images/sad.png";
     let divConclude = document.createElement("div");
     divConclude.className = "divConclude";
     let pMessage = document.createElement("p");
     pMessage.innerHTML = gameState.message;
-    let pTime = document.createElement("p");
-    pTime.innerHTML = "Your time is: " + t;
-    divConclude.append(pMessage, pTime);
+    //let pTime = document.createElement("p");
+    //pTime.innerHTML = "Your time is: " + t;
+    let buttReturn = document.createElement("button");
+    buttReturn.innerHTML = "RETURN";
+    buttReturn.className = "buttReturn";
+    buttReturn.onclick = () => {
+      greet("Hello " + userData.username);
+    };
+    divConclude.append(pMessage, buttReturn);
     divMain.appendChild(divConclude);
-    divMain.appendChild(divBoard);
-    return;
   }
   divMain.appendChild(divBoard);
 }

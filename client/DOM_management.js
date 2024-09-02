@@ -1,6 +1,7 @@
 let divMain;
 let userData = {};
 let currentGameId;
+let socket;
 
 function logUser() {
   divMain = document.getElementById("divMain");
@@ -107,6 +108,7 @@ function signInUser() {
 
 function greet(helloMessage) {
   cleanElement(divMain);
+
   let hello = document.createElement("h2");
   hello.innerHTML = helloMessage;
   let pSelect = document.createElement("p");
@@ -146,8 +148,6 @@ function startGame(text) {
   })
     .then((response) => response.json())
     .then((res) => {
-      currentGameId = res.gameId;
-      // console.log(res);
       render(res);
     })
     .catch((error) => {
@@ -198,4 +198,10 @@ function placeFlag(currentGameId, i, j) {
     .catch((error) => {
       alert("An error occurred: " + error);
     });
+}
+
+function setTime(t) {
+  let clock = document.getElementById("clock");
+  cleanElement(clock);
+  clock.innerHTML = "time: " + t + "'s";
 }

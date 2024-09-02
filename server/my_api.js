@@ -193,7 +193,7 @@ router.get("/tap_square", async (req, res) => {
   if (mineField.checkWin()) {
     mineField.gameOn.gameOver = true;
     mineField.gameOn.youWin = true;
-    // HERE I will handle filling the DB in case of LOSS //
+    // HERE I will handle filling the DB in case of WIN //
     res.status(200).json({
       message: `YOU WIN!`,
       gameId: gameId,
