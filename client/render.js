@@ -130,18 +130,21 @@ function render(gameState) {
     }
   }
   if (gameOver) {
+    clearInterval(intervalId);
     let cells = divBoard.getElementsByClassName("cell");
     for (let i = 0; i < cells.length; i++) {
       cells[i].style.pointerEvents = "none";
     }
     //console.log(cells);
     document.getElementById("smileyFace").src = "images/sad.png";
+    let tempTime = document.getElementById("clock").innerHTML;
+    document.getElementById("clock").innerHTML = tempTime;
     let divConclude = document.createElement("div");
     divConclude.className = "divConclude";
     let pMessage = document.createElement("p");
     pMessage.innerHTML = gameState.message;
     let pTime = document.createElement("p");
-    pTime.innerHTML = "Your time is: " + t;
+    pTime.innerHTML = "Your time is: " + t + "s";
     let buttReturn = document.createElement("button");
     buttReturn.innerHTML = "RETURN";
     buttReturn.className = "buttReturn";

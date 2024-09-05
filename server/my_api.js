@@ -6,15 +6,16 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 let games = {};
 
-// Create MySQL pool
 const pool = mysql.createPool({
   host: "localhost",
   user: "root",
   password: "outPut1!",
   database: "user_auth",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-// Promisify the query method for async/await
 const query = (sql, params) => {
   return new Promise((resolve, reject) => {
     pool.query(sql, params, (error, results) => {
@@ -24,61 +25,22 @@ const query = (sql, params) => {
   });
 };
 
-// Middleware for authentication
-router.use(async (req, res, next) => {
-  const token = req.headers["authorization"];
-  const jwtSecret = process.env.JWT_SECRET;
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, jwtSecret); // Replace with your secret key
-      req.userId = decoded.id; // Set user ID on the request object
-    } catch (error) {
-      console.error("Invalid token:", error);
-      res.status(401).json({ message: "Invalid token" });
-      return;
-    }
-  }
-  next();
-});
+// router.use(async (req, res, next) => {
+//   const token = req.headers["authorization"];
+//   const jwtSecret = process.env.JWT_SECRET;
+//   if (token) {
+//     try {
+//       const decoded = jwt.verify(token, jwtSecret);
+//       req.userId = decoded.id;
+//     } catch (error) {
+//       console.error("Invalid token:", error);
+//       res.status(401).json({ message: "Invalid token" });
+//       return;
+//     }
+//   }
+//   next();
+// });
 
-// Start game endpoint
-router.get("/start_game", async (req, res) => {
-  const text = req.query.text;
-  let factor;
-  if (text == "EASY") {
-    factor = 0.85;
-  } else if (text == "MEDIUM") {
-    factor = 0.8;
-  } else if (text == "HARD") {
-    factor = 0.7;
-  } else {
-    return "invalid";
-  }
-
-  try {
-    const gameId = Date.now().toString(); // Use a timestamp as a simple unique identifier
-    let mineField = new MineField(factor);
-    games[gameId] = mineField; // Store the game object
-    // console.log(mineField);
-    res.status(200).json({
-      message: `Game started with difficulty factor: ${factor}`,
-      gameId: gameId,
-      board: mineField.board,
-      gameOn: mineField.gameOn,
-      rows: mineField.rows,
-      cols: mineField.cols,
-      flags: mineField.flags,
-      hasStarted: mineField.time.hasStarted,
-      t: mineField.time.t,
-    });
-    mineField.time.startTime = new Date().getTime();
-  } catch (error) {
-    console.error("Error starting game:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// Register endpoint
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
@@ -103,14 +65,21 @@ router.post("/register", async (req, res) => {
       hashedPassword,
     ]);
 
-    res.status(201).json({ message: "Registration successful" });
+    const userId = await query(
+      "SELECT id FROM users WHERE username = ? AND password = ?",
+      [username, hashedPassword]
+    );
+    console.log(userId[0].id); //////////// access to user ID
+
+    res
+      .status(201)
+      .json({ message: "Registration successful", userId: userId[0].id });
   } catch (error) {
     console.error("Error during registration:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// Sign-in endpoint
 router.post("/signin", async (req, res) => {
   const { username, password } = req.body;
 
@@ -133,12 +102,53 @@ router.post("/signin", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (isMatch) {
+      console.log(user.id); //////////// access to user ID
       await fetchUserGames(res, user.id);
+      // console.log(games);
+      // games[user.id] = {};
     } else {
       res.status(401).json({ message: "Invalid credentials" });
     }
   } catch (error) {
     console.error("Error during sign-in:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/start_game", async (req, res) => {
+  const text = req.query.text;
+  let factor;
+  if (text == "EASY") {
+    factor = 0.85;
+  } else if (text == "MEDIUM") {
+    factor = 0.8;
+  } else if (text == "HARD") {
+    factor = 0.7;
+  } else {
+    return "invalid";
+  }
+
+  try {
+    const gameId = Date.now().toString();
+    let mineField = new MineField(factor);
+    games[gameId] = mineField;
+    mineField.gameId = gameId;
+
+    //console.log(gameId);
+    res.status(200).json({
+      message: `Game started with difficulty factor: ${factor}`,
+      gameId: gameId,
+      board: mineField.board,
+      gameOn: mineField.gameOn,
+      rows: mineField.rows,
+      cols: mineField.cols,
+      flags: mineField.flags,
+      hasStarted: mineField.time.hasStarted,
+      t: mineField.time.t,
+    });
+    mineField.time.startTime = new Date().getTime();
+  } catch (error) {
+    console.error("Error starting game:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -280,11 +290,13 @@ router.get("/place_flag", async (req, res) => {
 async function fetchUserGames(res, userId) {
   try {
     const gameResults = await query(
-      "SELECT date_of_occurrence, duration, result FROM user_games WHERE user_id = ?",
+      "SELECT date_of_occurrence, duration, diff, result FROM user_games WHERE user_id = ?",
       [userId]
     );
 
-    res.status(200).json({ message: "success", gameResults: gameResults });
+    res
+      .status(200)
+      .json({ message: "success", gameResults: gameResults, userId: userId });
   } catch (error) {
     console.error("Error fetching user games:", error);
     res.status(500).json({ message: "Internal server error" });

@@ -1,5 +1,6 @@
 class MineField {
   constructor(factor) {
+    this.id = { game: null, user: null };
     this.gameOn = { hasStarted: false, gameOver: false, youWin: false };
     this.time = { t: 0, hasStarted: false, startTime: null };
     this.factor = factor;

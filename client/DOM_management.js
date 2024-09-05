@@ -1,7 +1,7 @@
 let divMain;
 let userData = {};
 let currentGameId;
-let socket;
+let intervalId;
 
 function logUser() {
   divMain = document.getElementById("divMain");
@@ -71,8 +71,9 @@ function registerUser() {
         alert("Invalid info: " + res.message);
         logUser();
       } else {
-        greet();
-        alert("Hello " + userData.username);
+        greet("Hello " + userData.username);
+        // alert("Hello " + userData.username);
+        console.log(res.userId);
       }
     })
     .catch((error) => {
@@ -82,6 +83,7 @@ function registerUser() {
 }
 
 function signInUser() {
+  console.log(userData);
   fetch("/api/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -95,6 +97,7 @@ function signInUser() {
       } else {
         greet("Hello " + userData.username);
         //alert("Hello " + userData.username);
+        console.log(res);
         if (res.gameResults && res.gameResults.length > 0) {
           console.log(res.gameResults);
         }
@@ -149,9 +152,10 @@ function startGame(text) {
     .then((response) => response.json())
     .then((res) => {
       render(res);
+      console.log(res);
       let t = res.t;
       runTime(t);
-      setInterval(() => {
+      intervalId = setInterval(() => {
         t += 1;
         runTime(t);
       }, 1000);
