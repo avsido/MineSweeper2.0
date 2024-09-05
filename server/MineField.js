@@ -1,7 +1,7 @@
 class MineField {
   constructor(factor) {
     this.gameOn = { hasStarted: false, gameOver: false, youWin: false };
-    this.time = { t: 0, hasStarted: false };
+    this.time = { t: 0, hasStarted: false, startTime: null };
     this.factor = factor;
     this.rows = null;
     this.cols = null;

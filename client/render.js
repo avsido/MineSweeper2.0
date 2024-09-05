@@ -9,6 +9,7 @@ function render(gameState) {
   let rows = gameState.rows;
   let flags = gameState.flags;
   let board = gameState.board;
+  let t = gameState.t;
 
   let divHeader = document.createElement("div");
   divHeader.className = "header";
@@ -139,15 +140,15 @@ function render(gameState) {
     divConclude.className = "divConclude";
     let pMessage = document.createElement("p");
     pMessage.innerHTML = gameState.message;
-    //let pTime = document.createElement("p");
-    //pTime.innerHTML = "Your time is: " + t;
+    let pTime = document.createElement("p");
+    pTime.innerHTML = "Your time is: " + t;
     let buttReturn = document.createElement("button");
     buttReturn.innerHTML = "RETURN";
     buttReturn.className = "buttReturn";
     buttReturn.onclick = () => {
       greet("Hello " + userData.username);
     };
-    divConclude.append(pMessage, buttReturn);
+    divConclude.append(pMessage, pTime, buttReturn);
     divMain.appendChild(divConclude);
   }
 

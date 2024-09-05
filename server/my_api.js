@@ -71,6 +71,7 @@ router.get("/start_game", async (req, res) => {
       hasStarted: mineField.time.hasStarted,
       t: mineField.time.t,
     });
+    mineField.time.startTime = new Date().getTime();
   } catch (error) {
     console.error("Error starting game:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -174,6 +175,9 @@ router.get("/tap_square", async (req, res) => {
 
   if (mineField.getCell(i, j).isMine == 1) {
     mineField.gameOn.gameOver = true;
+    const currentTime = new Date().getTime();
+    const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
+    mineField.time.t = t;
     // HERE I will handle filling the DB in case of LOSS //
     res.status(200).json({
       message: `GAME OVER!`,
@@ -185,7 +189,10 @@ router.get("/tap_square", async (req, res) => {
       rows: mineField.rows,
       cols: mineField.cols,
       flags: mineField.flags,
+      t: mineField.time.t,
     });
+
+    //console.log(t);
     return;
   }
   if (mineField.getCell(i, j).flagged) {
@@ -205,6 +212,7 @@ router.get("/tap_square", async (req, res) => {
       rows: mineField.rows,
       cols: mineField.cols,
       flags: mineField.flags,
+      t: mineField.time.t,
     });
     return;
   }
@@ -221,6 +229,7 @@ router.get("/tap_square", async (req, res) => {
     rows: mineField.rows,
     cols: mineField.cols,
     flags: mineField.flags,
+    t: mineField.time.t,
   });
 });
 
@@ -233,6 +242,17 @@ router.get("/place_flag", async (req, res) => {
   }
 
   const mineField = games[gameId];
+  if (!mineField.gameOn.hasStarted) {
+    mineField.startGame(i, j);
+    for (let k = 0; k < mineField.rows; k++) {
+      for (let l = 0; l < mineField.cols; l++) {
+        mineField.getCell(k, l).neighborMineCount = mineField.getMineCount(
+          k,
+          l
+        );
+      }
+    }
+  }
   let message = " ";
 
   if (!mineField.getCell(i, j).flagged) {
@@ -253,6 +273,7 @@ router.get("/place_flag", async (req, res) => {
     rows: mineField.rows,
     cols: mineField.cols,
     flags: mineField.flags,
+    t: mineField.time.t,
   });
 });
 
