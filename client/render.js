@@ -79,13 +79,17 @@ function render(gameState) {
           i == j || (i + j) % 2 == 0 ? "beige" : "lightgreen";
       } else {
         cell.style.backgroundColor =
-          i == j || (i + j) % 2 == 0 ? "pink" : "coral";
+          i == j || (i + j) % 2 == 0
+            ? "rgba(255, 192, 203, 0.5)"
+            : "rgba(255, 127, 80, 0.5)";
         cell.onmouseover = (ev) => {
           ev.target.style.backgroundColor = "#96ca51";
         };
         cell.onmouseout = (ev) => {
           ev.target.style.backgroundColor =
-            i == j || (i + j) % 2 == 0 ? "pink" : "coral";
+            i == j || (i + j) % 2 == 0
+              ? "rgba(255, 192, 203, 0.5)"
+              : "rgba(255, 127, 80, 0.5)";
         };
       }
       if (!gameOver && !currentCell.flagged) {
@@ -135,7 +139,6 @@ function render(gameState) {
     for (let i = 0; i < cells.length; i++) {
       cells[i].style.pointerEvents = "none";
     }
-    //console.log(cells);
     document.getElementById("smileyFace").src = "images/sad.png";
     let tempTime = document.getElementById("clock").innerHTML;
     document.getElementById("clock").innerHTML = tempTime;
@@ -149,7 +152,7 @@ function render(gameState) {
     buttReturn.innerHTML = "RETURN";
     buttReturn.className = "buttReturn";
     buttReturn.onclick = () => {
-      greet("Hello " + userData.username);
+      greet(userData);
     };
     divConclude.append(pMessage, pTime, buttReturn);
     divMain.appendChild(divConclude);

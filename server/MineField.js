@@ -15,12 +15,12 @@ class MineField {
       //medium
       this.rows = 10;
       this.cols = 10;
-      this.flags = 44;
+      this.flags = 14;
     } else if (factor == 0.7) {
       //hard
       this.rows = 12;
       this.cols = 14;
-      this.flags = 90;
+      this.flags = 22;
     }
 
     this.board = [];

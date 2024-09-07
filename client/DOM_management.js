@@ -68,22 +68,21 @@ function registerUser() {
     .then((response) => response.json())
     .then((res) => {
       if (res.message !== "Registration successful") {
-        alert("Invalid info: " + res.message);
+        //alert("Invalid info: " + res.message);
         logUser();
       } else {
-        greet("Hello " + userData.username);
-        // alert("Hello " + userData.username);
-        console.log(res.userId);
+        userData.userId = res.userId;
+        greet(userData);
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
-      alert("An error occurred");
+      // console.error("Error:", error);
+      alert("An error occurred: " + error);
     });
 }
 
 function signInUser() {
-  console.log(userData);
+  //console.log(userData);
   fetch("/api/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -95,12 +94,8 @@ function signInUser() {
         alert(res.message);
         logUser();
       } else {
-        greet("Hello " + userData.username);
-        //alert("Hello " + userData.username);
-        console.log(res);
-        if (res.gameResults && res.gameResults.length > 0) {
-          console.log(res.gameResults);
-        }
+        userData.userId = res.userId;
+        greet(userData);
       }
     })
     .catch((error) => {
@@ -109,16 +104,16 @@ function signInUser() {
     });
 }
 
-function greet(helloMessage) {
+function greet(user) {
   cleanElement(divMain);
-
+  requestPastGames(user.userId);
   let hello = document.createElement("h2");
-  hello.innerHTML = helloMessage;
+  hello.innerHTML = "Hello " + user.username;
   let pSelect = document.createElement("p");
   pSelect.innerHTML = "SELECT DIFFICULTY: ";
-  const easyButton = createLevelButton("EASY"); // 0.85
-  const mediumButton = createLevelButton("MEDIUM"); // 0.8
-  const hardButton = createLevelButton("HARD"); // 0.7
+  const easyButton = createLevelButton("EASY", user.userId); // 0.85
+  const mediumButton = createLevelButton("MEDIUM", user.userId); // 0.8
+  const hardButton = createLevelButton("HARD", user.userId); // 0.7
 
   const divButtonsDifficulty = document.createElement("div");
   divButtonsDifficulty.className = "divInputsNButts";
@@ -132,16 +127,43 @@ function greet(helloMessage) {
   divMain.append(divButtonsDifficulty);
 }
 
-function createLevelButton(text) {
+function createLevelButton(diff, userId) {
   const button = document.createElement("button");
-  button.innerHTML = text;
-  button.onclick = () => startGame(text);
+  button.innerHTML = diff;
+  button.onclick = () => startGame(diff, userId);
   return button;
 }
 
-function startGame(text) {
+function requestPastGames(userId) {
+  const url = `/api/get_past_games?userId=${encodeURIComponent(userId)}`;
+
+  fetch(url, {
+    method: "GET",
+    // You don't need to set Content-Type for GET requests unless you're sending a body
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then((res) => {
+      if (res.message !== "success") {
+        alert(res.message);
+        logUser();
+      } else {
+        showPastGames(res.gameResults);
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("An error occurred");
+    });
+}
+
+function startGame(diff, userId) {
   cleanElement(divMain);
-  const url = "/api/start_game?text=" + text;
+  const url = "/api/start_game?diff=" + diff + "&userId=" + userId;
 
   fetch(url, {
     method: "GET",
@@ -152,7 +174,7 @@ function startGame(text) {
     .then((response) => response.json())
     .then((res) => {
       render(res);
-      console.log(res);
+      //console.log(res);
       let t = res.t;
       runTime(t);
       intervalId = setInterval(() => {
@@ -179,7 +201,6 @@ function tapSquare(currentGameId, i, j) {
   })
     .then((response) => response.json())
     .then((res) => {
-      // console.log(res);
       render(res);
     })
     .catch((error) => {
@@ -201,8 +222,6 @@ function placeFlag(currentGameId, i, j) {
   })
     .then((response) => response.json())
     .then((res) => {
-      //console.log(res.board);
-
       render(res);
     })
     .catch((error) => {
@@ -215,4 +234,90 @@ function runTime(t) {
   if (clock) {
     clock.innerHTML = "time: " + t + "s";
   }
+}
+
+function showPastGames(gamesInfo) {
+  const divPastGames = document.getElementById("divPastGames");
+  cleanElement(divPastGames);
+  const header = document.createElement("h4");
+  header.innerHTML = "YOUR GAMES HISTORY: ";
+  let tableGames = document.createElement("table");
+  let columns = [
+    { title: "#" },
+    { field: "date_of_occurrence", title: "Date & Time" },
+    { field: "diff", title: "Difficulty" },
+    { field: "duration", title: "Duration" },
+    { field: "result", title: "Result" },
+  ];
+  let tr = document.createElement("tr");
+  for (let i = 0; i < columns.length; i++) {
+    let th = document.createElement("th");
+    th.innerHTML = columns[i].title;
+    tr.appendChild(th);
+  }
+  tableGames.appendChild(tr);
+  for (let i = 0; i < gamesInfo.length; i++) {
+    let tr = document.createElement("tr");
+    for (let j = 0; j < columns.length; j++) {
+      let dataBit = gamesInfo[i][columns[j].field];
+      let td = document.createElement("td");
+      if (j == 0) {
+        td.innerHTML = i + 1 + "";
+      } else if (j == 1) {
+        dataBit = formatDateTime(dataBit);
+        td.innerHTML = dataBit + "";
+      } else if (j == 2) {
+        switch (dataBit) {
+          case "0.85":
+            td.innerHTML = "Easy";
+            break;
+          case "0.8":
+            td.innerHTML = "Medium";
+            break;
+          case "0.7":
+            td.innerHTML = "Hard";
+            break;
+          default:
+            td.innerHTML = " ";
+        }
+      } else if (j == 3) {
+        dataBit = formatTime(dataBit);
+        td.innerHTML = dataBit;
+      } else if (j == 4) {
+        let img = document.createElement("img");
+        img.src = dataBit ? "images/won.png" : "images/lost.png";
+        td.appendChild(img);
+      }
+
+      tr.appendChild(td);
+    }
+    tableGames.appendChild(tr);
+  }
+  divPastGames.append(header, tableGames);
+}
+
+function formatDateTime(dateString) {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function formatTime(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  const formattedHours = hours > 0 ? String(hours).padStart(2, "0") + ":" : "";
+  const formattedMinutes = String(minutes).padStart(2, "0");
+  const formattedSeconds = String(remainingSeconds).padStart(2, "0");
+
+  // Determine the time unit (hours or minutes)
+  const unit = hours > 0 ? "h" : "m";
+
+  return `${formattedHours}${formattedMinutes}:${formattedSeconds}${unit}`;
 }

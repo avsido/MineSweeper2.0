@@ -25,22 +25,6 @@ const query = (sql, params) => {
   });
 };
 
-// router.use(async (req, res, next) => {
-//   const token = req.headers["authorization"];
-//   const jwtSecret = process.env.JWT_SECRET;
-//   if (token) {
-//     try {
-//       const decoded = jwt.verify(token, jwtSecret);
-//       req.userId = decoded.id;
-//     } catch (error) {
-//       console.error("Invalid token:", error);
-//       res.status(401).json({ message: "Invalid token" });
-//       return;
-//     }
-//   }
-//   next();
-// });
-
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
@@ -69,7 +53,7 @@ router.post("/register", async (req, res) => {
       "SELECT id FROM users WHERE username = ? AND password = ?",
       [username, hashedPassword]
     );
-    console.log(userId[0].id); //////////// access to user ID
+    //console.log(typeof userId[0].id); //////////// access to user ID
 
     res
       .status(201)
@@ -94,7 +78,7 @@ router.post("/signin", async (req, res) => {
       username,
     ]);
 
-    if (users.length === 0) {
+    if (users.length == 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -102,10 +86,9 @@ router.post("/signin", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (isMatch) {
-      console.log(user.id); //////////// access to user ID
-      await fetchUserGames(res, user.id);
-      // console.log(games);
-      // games[user.id] = {};
+      //console.log(user.id); //////////// access to user ID
+      //await fetchUserGames(res, user.id);
+      res.status(200).json({ message: "success", userId: user.id });
     } else {
       res.status(401).json({ message: "Invalid credentials" });
     }
@@ -115,14 +98,43 @@ router.post("/signin", async (req, res) => {
   }
 });
 
+router.get("/get_past_games", async (req, res) => {
+  const userId = parseInt(req.query.userId);
+  fetchUserGames(res, userId);
+});
+
 router.get("/start_game", async (req, res) => {
-  const text = req.query.text;
+  const diff = req.query.diff;
+
+  const userId = parseInt(req.query.userId);
+  if (typeof diff != "string") {
+    return console.log("invalid diffic");
+  }
+  if (!Number.isInteger(userId)) {
+    return res.status(401).json({ message: "Invalid credentials" });
+  } else {
+    try {
+      const [results] = await query(
+        "SELECT COUNT(*) AS count FROM users WHERE id = ?",
+        [userId]
+      );
+      const isValidUserId = results.count > 0;
+
+      if (!isValidUserId) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+    } catch (error) {
+      return console.error("Error querying the database:", error.message);
+    }
+  }
+
   let factor;
-  if (text == "EASY") {
+  // ADD SECURITYYYS
+  if (diff == "EASY") {
     factor = 0.85;
-  } else if (text == "MEDIUM") {
+  } else if (diff == "MEDIUM") {
     factor = 0.8;
-  } else if (text == "HARD") {
+  } else if (diff == "HARD") {
     factor = 0.7;
   } else {
     return "invalid";
@@ -131,10 +143,10 @@ router.get("/start_game", async (req, res) => {
   try {
     const gameId = Date.now().toString();
     let mineField = new MineField(factor);
+    mineField.id.user = userId;
     games[gameId] = mineField;
-    mineField.gameId = gameId;
+    mineField.id.game = gameId;
 
-    //console.log(gameId);
     res.status(200).json({
       message: `Game started with difficulty factor: ${factor}`,
       gameId: gameId,
@@ -201,8 +213,23 @@ router.get("/tap_square", async (req, res) => {
       flags: mineField.flags,
       t: mineField.time.t,
     });
+    let gameDate = getCurrentDateTime();
+    insertUserGame(
+      mineField.id.game,
+      mineField.id.user,
+      gameDate,
+      mineField.factor,
+      mineField.time.t,
+      mineField.gameOn.youWin,
+      (err, results) => {
+        if (err) {
+          console.error("Failed to insert user game:", err);
+        } else {
+          console.log("Insert successful:", results);
+        }
+      }
+    );
 
-    //console.log(t);
     return;
   }
   if (mineField.getCell(i, j).flagged) {
@@ -224,6 +251,22 @@ router.get("/tap_square", async (req, res) => {
       flags: mineField.flags,
       t: mineField.time.t,
     });
+    let gameDate = getCurrentDateTime();
+    insertUserGame(
+      mineField.id.game,
+      mineField.id.user,
+      gameDate,
+      mineField.factor,
+      mineField.time.t,
+      mineField.gameOn.youWin,
+      (err, results) => {
+        if (err) {
+          console.error("Failed to insert user game:", err);
+        } else {
+          console.log("Insert successful:", results);
+        }
+      }
+    );
     return;
   }
 
@@ -290,13 +333,11 @@ router.get("/place_flag", async (req, res) => {
 async function fetchUserGames(res, userId) {
   try {
     const gameResults = await query(
-      "SELECT date_of_occurrence, duration, diff, result FROM user_games WHERE user_id = ?",
+      "SELECT date_of_occurrence, diff, duration, result FROM user_games WHERE user_id = ? ORDER BY date_of_occurrence DESC",
       [userId]
     );
-
-    res
-      .status(200)
-      .json({ message: "success", gameResults: gameResults, userId: userId });
+    //console.log(gameResults);
+    res.status(200).json({ message: "success", gameResults: gameResults });
   } catch (error) {
     console.error("Error fetching user games:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -329,6 +370,46 @@ function pseudoizeBoard(board) {
   // console.log(pseudoBoard);
 
   return pseudoBoard;
+}
+
+function insertUserGame(
+  gameId,
+  userId,
+  dateOfOccurrence,
+  diff,
+  duration,
+  result,
+  callback
+) {
+  const query = `
+    INSERT INTO user_games (game_id, user_id, date_of_occurrence, diff, duration, result)
+    VALUES (?, ?, ?, ?, ?, ?)`;
+
+  pool.query(
+    query,
+    [gameId, userId, dateOfOccurrence, diff, duration, result],
+    (err, results) => {
+      if (err) {
+        console.error("Error executing query:", err);
+        if (callback) callback(err, null);
+        return;
+      }
+      console.log("Insert successful:", results);
+      if (callback) callback(null, results);
+    }
+  );
+}
+
+function getCurrentDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
+  return dateTimeString;
 }
 
 module.exports = router;
