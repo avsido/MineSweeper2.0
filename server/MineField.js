@@ -152,7 +152,7 @@ class MineField {
       mineField.flags += 1;
     } else {
       //add flag
-      if (mineField.flags == 0) return;
+      if (mineField.flags == 0 || mineField.getCell(i, j).checked) return;
 
       mineField.getCell(i, j).flagged = true;
       mineField.flags -= 1;

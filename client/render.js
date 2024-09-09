@@ -1,14 +1,11 @@
 function render(gameState) {
-  // console.log(gameState.mineField);
-
-  //console.log(gameState);
   let currentGameId = gameState.gameId;
   let gameOver = gameState.gameOn.gameOver;
-  let youWin = gameState.gameOn.youWin;
   let cols = gameState.cols;
   let rows = gameState.rows;
   let flags = gameState.flags;
   let board = gameState.board;
+  let youWin = gameState.gameOn.youWin;
   let t = gameState.t;
 
   let divHeader = document.createElement("div");
@@ -19,15 +16,11 @@ function render(gameState) {
   clock.style.zIndex = 1;
   clock.id = "clock";
 
-  //clock.innerHTML = "time: " + t;
-
   let smileyFace = document.createElement("img");
   smileyFace.id = "smileyFace";
   smileyFace.src = "images/happy.png";
   let pFlags = document.createElement("p");
-  //pFlags.innerHTML = "flags: " + flags;
   pFlags.id = "pFlags";
-  //console.log(gameState.gameOn.hasStarted);
   if (!gameState.gameOn.hasStarted) {
     divHeader.append(clock, smileyFace, pFlags);
     divMain.appendChild(divHeader);
@@ -83,7 +76,9 @@ function render(gameState) {
             ? "rgba(255, 192, 203, 0.5)"
             : "rgba(255, 127, 80, 0.5)";
         cell.onmouseover = (ev) => {
-          ev.target.style.backgroundColor = "#96ca51";
+          if (!currentCell.flagged) {
+            ev.target.style.backgroundColor = "#96ca51";
+          }
         };
         cell.onmouseout = (ev) => {
           ev.target.style.backgroundColor =
@@ -91,25 +86,6 @@ function render(gameState) {
               ? "rgba(255, 192, 203, 0.5)"
               : "rgba(255, 127, 80, 0.5)";
         };
-      }
-      if (!gameOver && !currentCell.flagged) {
-        cell.classList.add(); //////////////////////////////////////////////////////////////////////////////
-      }
-      if (currentCell.flagged) {
-        let imgFlag = document.createElement("img");
-        imgFlag.src = "images/flag.png";
-        cell.appendChild(imgFlag);
-      }
-
-      if (
-        gameOver &&
-        !youWin &&
-        currentCell.isMine == 1 &&
-        !currentCell.flagged
-      ) {
-        let imgMine = document.createElement("img");
-        imgMine.src = "images/bomb.png";
-        cell.appendChild(imgMine);
       }
 
       if (!gameOver) {
@@ -131,6 +107,19 @@ function render(gameState) {
           }, 10);
         };
       }
+      if (currentCell.flagged) {
+        let imgFlag = document.createElement("img");
+        imgFlag.src = "images/flag3.png";
+        imgFlag.style.backgroundColor = "";
+        cell.appendChild(imgFlag);
+        cell.onclick = () => {};
+      } else {
+        if (currentCell.isMine == 1) {
+          let imgMine = document.createElement("img");
+          imgMine.src = "images/bomb.png";
+          cell.appendChild(imgMine);
+        }
+      }
     }
   }
   if (gameOver) {
@@ -138,8 +127,12 @@ function render(gameState) {
     let cells = divBoard.getElementsByClassName("cell");
     for (let i = 0; i < cells.length; i++) {
       cells[i].style.pointerEvents = "none";
+      cells[i].onclick = () => {};
+      cells[i].oncontextmenu = () => {};
     }
-    document.getElementById("smileyFace").src = "images/sad.png";
+    document.getElementById("smileyFace").src = youWin
+      ? "images/happy.png"
+      : "images/sad.png";
     let tempTime = document.getElementById("clock").innerHTML;
     document.getElementById("clock").innerHTML = tempTime;
     let divConclude = document.createElement("div");
@@ -162,5 +155,27 @@ function render(gameState) {
   if (existingBoard && divMain.contains(existingBoard)) {
     divMain.removeChild(existingBoard);
   }
-  divMain.appendChild(divBoard);
+
+  let quitButt = document.createElement("button");
+  quitButt.innerHTML = "QUIT";
+  quitButt.onclick = () => {};
+  divMain.append(divBoard, quitButt);
+
+  window.addEventListener("beforeunload", (event) => {
+    fetch("/api/page_refreshed_game_lost?currentGameId=" + currentGameId, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((res) => {
+        render(res);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+
+    sessionStorage.removeItem("hasRefreshed");
+  });
 }

@@ -15,7 +15,7 @@ body {
 
 #divHeader {
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center; 
     height: 10vh; 
     text-align: center;
@@ -30,7 +30,7 @@ body {
     font-family: "New Amsterdam", sans-serif;
     font-weight: 400;
     font-style: normal; 
-    color: white;
+    color: #eae921;
     display: flex;
     align-items: center; 
     gap: 10px; 
@@ -45,7 +45,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-around;
     text-align: center;
     /*border: 5px solid rgba(153, 0, 0, 0.48);*/
     border-radius: 10px;
@@ -60,7 +60,7 @@ body {
 
 .hello{
     font-family: Georgia, 'Times New Roman', Times, serif;
-    color: #973737;
+    
 }
 
 .divInputsNButts{
@@ -73,15 +73,15 @@ body {
     align-content: center;
     justify-content: space-around;
     border-radius: 10px;
-    background-color: #808080a3;
+    background-color: rgb(64 22 22 / 52%);
     border: 15px solid lightgray;
     align-items: center;
-    
+    box-shadow: -6px -10px 10px;
 }
 
 .divInputsNButts h1, h2{
     font-family: Georgia, 'Times New Roman', Times, serif;
-    color: #973737;
+    color: #ffffff;
 }
 
 
@@ -137,6 +137,7 @@ body {
     padding: 8px;
     color: white;
     font-family:fantasy;
+    box-shadow: -3px -5px 5px #00000091;
 }
 .header img{
     
@@ -144,8 +145,8 @@ body {
     height: 45px;
 }
 .divBoard{
-    
-    border: 25px solid #ff00005c;
+    box-shadow: -6px -10px 10px;
+    border: 25px solid #6c1c1c;
 }
 
 .divRow{
@@ -181,6 +182,8 @@ body {
     align-items: center;
     font-family:fantasy;
     border-radius: 5px;
+    left: 175px;
+    box-shadow: -6px -10px 10px #f9000091;
 }
 .divConclude p{
     margin: 5px;
@@ -218,7 +221,7 @@ th{
     position: absolute;
     right: 10px;
     top: 122px;
-    background-color: rgba(255, 255, 255, 0.319);
+    background-color: rgb(64 22 22 / 52%);
     text-align: center;
     margin: 5px;
     padding: 5px;
@@ -232,6 +235,7 @@ th{
     font-family: monospace;
     font-size: 150%;
     margin: 15px 0px;
+    color: #ffffff;
 }
 
 

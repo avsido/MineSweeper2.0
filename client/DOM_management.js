@@ -139,7 +139,6 @@ function requestPastGames(userId) {
 
   fetch(url, {
     method: "GET",
-    // You don't need to set Content-Type for GET requests unless you're sending a body
   })
     .then((response) => {
       if (!response.ok) {
@@ -151,9 +150,7 @@ function requestPastGames(userId) {
       if (res.message !== "success") {
         alert(res.message);
         logUser();
-      } else {
-        showPastGames(res.gameResults);
-      }
+      } else if (res.gameResults.length > 0) showPastGames(res.gameResults);
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -163,6 +160,7 @@ function requestPastGames(userId) {
 
 function startGame(diff, userId) {
   cleanElement(divMain);
+
   const url = "/api/start_game?diff=" + diff + "&userId=" + userId;
 
   fetch(url, {
@@ -201,6 +199,7 @@ function tapSquare(currentGameId, i, j) {
   })
     .then((response) => response.json())
     .then((res) => {
+      //console.log(res);
       render(res);
     })
     .catch((error) => {
@@ -222,6 +221,7 @@ function placeFlag(currentGameId, i, j) {
   })
     .then((response) => response.json())
     .then((res) => {
+      //console.log(res);
       render(res);
     })
     .catch((error) => {
@@ -262,7 +262,7 @@ function showPastGames(gamesInfo) {
       let dataBit = gamesInfo[i][columns[j].field];
       let td = document.createElement("td");
       if (j == 0) {
-        td.innerHTML = i + 1 + "";
+        td.innerHTML = gamesInfo.length - i;
       } else if (j == 1) {
         dataBit = formatDateTime(dataBit);
         td.innerHTML = dataBit + "";

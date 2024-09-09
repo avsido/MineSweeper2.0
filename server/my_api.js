@@ -22,7 +22,7 @@ const query = (sql, params) => {
       resolve(results);
     });
   });
-};
+}; //console
 
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
@@ -235,8 +235,7 @@ router.get("/tap_square", async (req, res) => {
   mineField.revealMinesAroundMe(mineField, i, j);
 
   if (mineField.checkWin()) {
-    setWin(res, mineField, gameId);
-    return;
+    return setWin(res, mineField, gameId);
   }
 
   let pseudoBoard = pseudoizeBoard(mineField.board);
@@ -287,8 +286,7 @@ router.get("/place_flag", async (req, res) => {
   mineField.placeFlag(mineField, i, j);
 
   if (mineField.checkWin()) {
-    setWin(res, mineField, gameId);
-    return;
+    return setWin(res, mineField, gameId);
   }
 
   let pseudoBoard = pseudoizeBoard(mineField.board);
@@ -330,10 +328,10 @@ router.post("/page_refreshed_game_lost", async (req, res) => {
         mineField.gameOn.youWin,
         (err, results) => {
           if (err) {
-            console.error("Failed to insert user game:", err);
+            //console.error("Failed to insert user game:", err);
             reject(err);
           } else {
-            console.log("Insert successful:", results);
+            //console.log("Insert successful:", results);
             resolve(results);
           }
         }
@@ -400,33 +398,6 @@ function pseudoizeBoard(board) {
   return pseudoBoard;
 }
 
-// function insertUserGame(
-//   gameId,
-//   userId,
-//   dateOfOccurrence,
-//   diff,
-//   duration,
-//   result,
-//   callback
-// ) {
-//   const query = `
-//     INSERT INTO user_games (game_id, user_id, date_of_occurrence, diff, duration, result)
-//     VALUES (?, ?, ?, ?, ?, ?)`;
-
-//   pool.query(
-//     query,
-//     [gameId, userId, dateOfOccurrence, diff, duration, result],
-//     (err, results) => {
-//       if (err) {
-//         console.error("Error executing query:", err);
-//         if (callback) callback(err, null);
-//         return;
-//       }
-//       console.log("Insert successful:", results);
-//       if (callback) callback(null, results);
-//     }
-//   );
-// }
 function insertUserGame(
   gameId,
   userId,
