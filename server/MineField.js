@@ -10,12 +10,12 @@ class MineField {
       //easy
       this.rows = 8;
       this.cols = 10;
-      this.flags = 10;
+      this.flags = 12;
     } else if (factor == 0.8) {
       //medium
       this.rows = 10;
       this.cols = 10;
-      this.flags = 14;
+      this.flags = 15;
     } else if (factor == 0.7) {
       //hard
       this.rows = 12;
@@ -80,23 +80,6 @@ class MineField {
     if (j > 0 && i < rows - 1) mines += this.getCell(i + 1, j - 1).isMine; // bottom left
     return mines;
   }
-
-  // revealMinesAroundMe(i, j) {
-  //   let rows = this.rows;
-  //   let cols = this.cols;
-  //   if (this.getCell(i, j).checked) return;
-  //   if (!this.getCell(i, j).flagged) this.getCell(i, j).checked = true;
-  //   if (this.getCell(i, j).neighborMineCount > 0 || !this.isShouldReveal(i, j))
-  //     return;
-  //   if (i > 0 && j > 0) this.revealMinesAroundMe(i - 1, j - 1);
-  //   if (i > 0) this.revealMinesAroundMe(i - 1, j);
-  //   if (i > 0 && j < cols - 1) this.revealMinesAroundMe(i - 1, j + 1);
-  //   if (j < cols - 1) this.revealMinesAroundMe(i, j + 1);
-  //   if (i < rows - 1 && j < cols - 1) this.revealMinesAroundMe(i + 1, j + 1);
-  //   if (i < rows - 1) this.revealMinesAroundMe(i + 1, j);
-  //   if (j > 0) this.revealMinesAroundMe(i, j - 1);
-  //   if (i < rows - 1 && j > 0) this.revealMinesAroundMe(i + 1, j - 1);
-  // }
 
   revealMinesAroundMe(mineField, i, j) {
     let rows = mineField.rows;
@@ -177,7 +160,15 @@ class MineField {
   }
 
   checkWin() {
-    // console.log("checking win");
+    for (let square of this.board) {
+      if (square.isMine === 1 && !square.flagged) {
+        return false;
+      }
+      if (square.isMine === 0 && !square.checked) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

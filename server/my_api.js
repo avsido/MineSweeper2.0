@@ -2,7 +2,6 @@ const MineField = require("./MineField.js");
 const express = require("express");
 const bcrypt = require("bcrypt");
 const mysql = require("mysql2");
-const jwt = require("jsonwebtoken");
 const router = express.Router();
 let games = {};
 
@@ -59,7 +58,7 @@ router.post("/register", async (req, res) => {
       .status(201)
       .json({ message: "Registration successful", userId: userId[0].id });
   } catch (error) {
-    console.error("Error during registration:", error);
+    //console.error("Error during registration:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -87,13 +86,13 @@ router.post("/signin", async (req, res) => {
 
     if (isMatch) {
       //console.log(user.id); //////////// access to user ID
-      //await fetchUserGames(res, user.id);
+
       res.status(200).json({ message: "success", userId: user.id });
     } else {
       res.status(401).json({ message: "Invalid credentials" });
     }
   } catch (error) {
-    console.error("Error during sign-in:", error);
+    //console.error("Error during sign-in:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -121,10 +120,10 @@ router.get("/start_game", async (req, res) => {
       const isValidUserId = results.count > 0;
 
       if (!isValidUserId) {
-        return res.status(401).json({ message: "Invalid credentials" });
+        //return res.status(401).json({ message: "Invalid credentials" });
       }
     } catch (error) {
-      return console.error("Error querying the database:", error.message);
+      //return console.error("Error querying the database:", error.message);
     }
   }
 
@@ -160,7 +159,7 @@ router.get("/start_game", async (req, res) => {
     });
     mineField.time.startTime = new Date().getTime();
   } catch (error) {
-    console.error("Error starting game:", error);
+    //console.error("Error starting game:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -176,24 +175,10 @@ router.get("/tap_square", async (req, res) => {
   j = parseInt(j);
 
   if (!validateIorJ(i) || !validateIorJ(j)) {
-    // console.log(i);
-    // console.log(j);
     return res.status(200).json({ message: "invalid i or j" });
   }
 
   const mineField = games[gameId];
-
-  if (!mineField.gameOn.hasStarted) {
-    mineField.startGame(i, j);
-    for (let k = 0; k < mineField.rows; k++) {
-      for (let l = 0; l < mineField.cols; l++) {
-        mineField.getCell(k, l).neighborMineCount = mineField.getMineCount(
-          k,
-          l
-        );
-      }
-    }
-  }
 
   if (mineField.getCell(i, j).isMine == 1) {
     mineField.gameOn.gameOver = true;
@@ -205,7 +190,6 @@ router.get("/tap_square", async (req, res) => {
       message: `GAME OVER!`,
       gameId: gameId,
       gameOver: mineField.gameOn.gameOver,
-      youWin: mineField.gameOn.youWin,
       board: mineField.board,
       gameOn: mineField.gameOn,
       rows: mineField.rows,
@@ -223,9 +207,9 @@ router.get("/tap_square", async (req, res) => {
       mineField.gameOn.youWin,
       (err, results) => {
         if (err) {
-          console.error("Failed to insert user game:", err);
+          //console.error("Failed to insert user game:", err);
         } else {
-          console.log("Insert successful:", results);
+          //console.log("Insert successful:", results);
         }
       }
     );
@@ -236,41 +220,24 @@ router.get("/tap_square", async (req, res) => {
     return;
   }
 
-  if (mineField.checkWin()) {
-    mineField.gameOn.gameOver = true;
-    mineField.gameOn.youWin = true;
-    // HERE I will handle filling the DB in case of WIN //
-    res.status(200).json({
-      message: `YOU WIN!`,
-      gameId: gameId,
-      gameOver: mineField.gameOn.gameOver,
-      youWin: mineField.gameOn.youWin,
-      board: mineField.board,
-      rows: mineField.rows,
-      cols: mineField.cols,
-      flags: mineField.flags,
-      t: mineField.time.t,
-    });
-    let gameDate = getCurrentDateTime();
-    insertUserGame(
-      mineField.id.game,
-      mineField.id.user,
-      gameDate,
-      mineField.factor,
-      mineField.time.t,
-      mineField.gameOn.youWin,
-      (err, results) => {
-        if (err) {
-          console.error("Failed to insert user game:", err);
-        } else {
-          console.log("Insert successful:", results);
-        }
+  if (!mineField.gameOn.hasStarted) {
+    mineField.startGame(i, j);
+    for (let k = 0; k < mineField.rows; k++) {
+      for (let l = 0; l < mineField.cols; l++) {
+        mineField.getCell(k, l).neighborMineCount = mineField.getMineCount(
+          k,
+          l
+        );
       }
-    );
-    return;
+    }
   }
 
   mineField.revealMinesAroundMe(mineField, i, j);
+
+  if (mineField.checkWin()) {
+    setWin(res, mineField, gameId);
+    return;
+  }
 
   let pseudoBoard = pseudoizeBoard(mineField.board);
 
@@ -288,13 +255,16 @@ router.get("/tap_square", async (req, res) => {
 
 router.get("/place_flag", async (req, res) => {
   let { gameId, i, j } = req.query;
+
   i = parseInt(i);
   j = parseInt(j);
+
   if (!gameId || !games[gameId]) {
     return res.status(400).json({ message: "Invalid Game ID" });
   }
 
   const mineField = games[gameId];
+
   if (!mineField.gameOn.hasStarted) {
     mineField.startGame(i, j);
     for (let k = 0; k < mineField.rows; k++) {
@@ -316,6 +286,11 @@ router.get("/place_flag", async (req, res) => {
 
   mineField.placeFlag(mineField, i, j);
 
+  if (mineField.checkWin()) {
+    setWin(res, mineField, gameId);
+    return;
+  }
+
   let pseudoBoard = pseudoizeBoard(mineField.board);
 
   res.status(200).json({
@@ -330,6 +305,59 @@ router.get("/place_flag", async (req, res) => {
   });
 });
 
+router.post("/page_refreshed_game_lost", async (req, res) => {
+  try {
+    let gameId = req.query.currentGameId; // or req.body.currentGameId if using body-parser
+
+    if (!gameId || !games[gameId]) {
+      return res.status(400).json({ message: "Invalid game ID" });
+    }
+
+    const mineField = games[gameId];
+    mineField.gameOn.gameOver = true;
+    const currentTime = new Date().getTime();
+    const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
+    mineField.time.t = t;
+
+    // HERE I will handle filling the DB in case of LOSS //
+    await new Promise((resolve, reject) => {
+      insertUserGame(
+        mineField.id.game,
+        mineField.id.user,
+        getCurrentDateTime(),
+        mineField.factor,
+        mineField.time.t,
+        mineField.gameOn.youWin,
+        (err, results) => {
+          if (err) {
+            console.error("Failed to insert user game:", err);
+            reject(err);
+          } else {
+            console.log("Insert successful:", results);
+            resolve(results);
+          }
+        }
+      );
+    });
+
+    res.status(200).json({
+      message: `GAME OVER!`,
+      gameId: gameId,
+      gameOver: mineField.gameOn.gameOver,
+      youWin: mineField.gameOn.youWin,
+      board: mineField.board,
+      gameOn: mineField.gameOn,
+      rows: mineField.rows,
+      cols: mineField.cols,
+      flags: mineField.flags,
+      t: mineField.time.t,
+    });
+  } catch (error) {
+    console.error("Server error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 async function fetchUserGames(res, userId) {
   try {
     const gameResults = await query(
@@ -339,8 +367,8 @@ async function fetchUserGames(res, userId) {
     //console.log(gameResults);
     res.status(200).json({ message: "success", gameResults: gameResults });
   } catch (error) {
-    console.error("Error fetching user games:", error);
-    res.status(500).json({ message: "Internal server error" });
+    // console.error("Error fetching user games:", error);
+    // res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -372,6 +400,33 @@ function pseudoizeBoard(board) {
   return pseudoBoard;
 }
 
+// function insertUserGame(
+//   gameId,
+//   userId,
+//   dateOfOccurrence,
+//   diff,
+//   duration,
+//   result,
+//   callback
+// ) {
+//   const query = `
+//     INSERT INTO user_games (game_id, user_id, date_of_occurrence, diff, duration, result)
+//     VALUES (?, ?, ?, ?, ?, ?)`;
+
+//   pool.query(
+//     query,
+//     [gameId, userId, dateOfOccurrence, diff, duration, result],
+//     (err, results) => {
+//       if (err) {
+//         console.error("Error executing query:", err);
+//         if (callback) callback(err, null);
+//         return;
+//       }
+//       console.log("Insert successful:", results);
+//       if (callback) callback(null, results);
+//     }
+//   );
+// }
 function insertUserGame(
   gameId,
   userId,
@@ -383,18 +438,24 @@ function insertUserGame(
 ) {
   const query = `
     INSERT INTO user_games (game_id, user_id, date_of_occurrence, diff, duration, result)
-    VALUES (?, ?, ?, ?, ?, ?)`;
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+    user_id = VALUES(user_id),
+    date_of_occurrence = VALUES(date_of_occurrence),
+    diff = VALUES(diff),
+    duration = VALUES(duration),
+    result = VALUES(result)`;
 
   pool.query(
     query,
     [gameId, userId, dateOfOccurrence, diff, duration, result],
     (err, results) => {
       if (err) {
-        console.error("Error executing query:", err);
+        //console.error("Error executing query:", err);
         if (callback) callback(err, null);
         return;
       }
-      console.log("Insert successful:", results);
+      //console.log("Insert/Update successful:", results);
       if (callback) callback(null, results);
     }
   );
@@ -410,6 +471,41 @@ function getCurrentDateTime() {
 
   const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
   return dateTimeString;
+}
+
+function setWin(res, mineField, gameId) {
+  const currentTime = new Date().getTime();
+  const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
+  mineField.time.t = t;
+  mineField.gameOn.gameOver = true;
+  mineField.gameOn.youWin = true;
+  // HERE I will handle filling the DB in case of WIN //
+  res.status(200).json({
+    message: `YOU WIN!`,
+    gameId: gameId,
+    gameOn: mineField.gameOn,
+    board: mineField.board,
+    rows: mineField.rows,
+    cols: mineField.cols,
+    flags: mineField.flags,
+    t: mineField.time.t,
+  });
+  let gameDate = getCurrentDateTime();
+  insertUserGame(
+    mineField.id.game,
+    mineField.id.user,
+    gameDate,
+    mineField.factor,
+    mineField.time.t,
+    mineField.gameOn.youWin,
+    (err, results) => {
+      if (err) {
+        //console.error("Failed to insert user game:", err);
+      } else {
+        //console.log("Insert successfullll:", results);
+      }
+    }
+  );
 }
 
 module.exports = router;
