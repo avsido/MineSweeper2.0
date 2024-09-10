@@ -44,6 +44,7 @@ function createDivButts() {
   divButts.className = "divButts";
 
   const registerButt = document.createElement("button");
+  registerButt.className = "gameButt";
   registerButt.innerHTML = "REGISTER";
   registerButt.onclick = registerUser;
 
@@ -52,6 +53,7 @@ function createDivButts() {
   or.innerHTML = " OR ";
 
   const signinButt = document.createElement("button");
+  signinButt.className = "gameButt";
   signinButt.innerHTML = "SIGN IN";
   signinButt.onclick = signInUser;
 
@@ -63,21 +65,21 @@ function registerUser() {
   fetch("/api/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(userData),
   })
     .then((response) => response.json())
     .then((res) => {
-      if (res.message !== "Registration successful") {
+      if (res.message !== "success") {
         //alert("Invalid info: " + res.message);
         logUser();
       } else {
-        userData.userId = res.userId;
-        greet(userData);
+        // userData.userId = res.userId;
+        greet(userData.username);
       }
     })
     .catch((error) => {
       // console.error("Error:", error);
-      alert("An error occurred: " + error);
     });
 }
 
@@ -86,6 +88,7 @@ function signInUser() {
   fetch("/api/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(userData),
   })
     .then((response) => response.json())
@@ -95,25 +98,24 @@ function signInUser() {
         logUser();
       } else {
         userData.userId = res.userId;
-        greet(userData);
+        greet(userData.username);
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("An error occurred");
     });
 }
 
-function greet(user) {
+function greet(name) {
   cleanElement(divMain);
-  requestPastGames(user.userId);
+  requestPastGames();
   let hello = document.createElement("h2");
-  hello.innerHTML = "Hello " + user.username;
+  hello.innerHTML = "Hello " + name;
   let pSelect = document.createElement("p");
   pSelect.innerHTML = "SELECT DIFFICULTY: ";
-  const easyButton = createLevelButton("EASY", user.userId); // 0.85
-  const mediumButton = createLevelButton("MEDIUM", user.userId); // 0.8
-  const hardButton = createLevelButton("HARD", user.userId); // 0.7
+  const easyButton = createLevelButton("EASY"); // 0.85
+  const mediumButton = createLevelButton("MEDIUM"); // 0.8
+  const hardButton = createLevelButton("HARD"); // 0.7
 
   const divButtonsDifficulty = document.createElement("div");
   divButtonsDifficulty.className = "divInputsNButts";
@@ -127,18 +129,20 @@ function greet(user) {
   divMain.append(divButtonsDifficulty);
 }
 
-function createLevelButton(diff, userId) {
+function createLevelButton(diff) {
   const button = document.createElement("button");
+  button.className = "gameButt";
   button.innerHTML = diff;
-  button.onclick = () => startGame(diff, userId);
+  button.onclick = () => startGame(diff);
   return button;
 }
 
-function requestPastGames(userId) {
-  const url = `/api/get_past_games?userId=${encodeURIComponent(userId)}`;
+function requestPastGames() {
+  const url = `/api/get_past_games`;
 
   fetch(url, {
     method: "GET",
+    credentials: "include",
   })
     .then((response) => {
       if (!response.ok) {
@@ -148,26 +152,25 @@ function requestPastGames(userId) {
     })
     .then((res) => {
       if (res.message !== "success") {
-        alert(res.message);
         logUser();
       } else if (res.gameResults.length > 0) showPastGames(res.gameResults);
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("An error occurred");
     });
 }
 
-function startGame(diff, userId) {
+function startGame(diff) {
   cleanElement(divMain);
 
-  const url = "/api/start_game?diff=" + diff + "&userId=" + userId;
+  const url = "/api/start_game?diff=" + diff;
 
   fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
   })
     .then((response) => response.json())
     .then((res) => {
@@ -181,51 +184,64 @@ function startGame(diff, userId) {
       }, 1000);
     })
     .catch((error) => {
-      alert("An error occurred: " + error);
+      console.log("An error occurred: " + error);
     });
 }
 
-function tapSquare(currentGameId, i, j) {
-  if (!currentGameId) {
-    alert("No active game!");
-    return;
-  }
-  const url = `/api/tap_square?gameId=${currentGameId}&i=${i}&j=${j}`;
+function tapSquare(i, j) {
+  // if (!currentGameId) {
+  //   console.log("No active game!");
+  //   return;
+  // }
+  const url = `/api/tap_square?i=${i}&j=${j}`;
   fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
   })
     .then((response) => response.json())
     .then((res) => {
-      //console.log(res);
       render(res);
     })
     .catch((error) => {
-      alert("An error occurred: " + error);
+      console.log("An error occurred: " + error);
     });
 }
 
-function placeFlag(currentGameId, i, j) {
-  if (!currentGameId) {
-    alert("No active game!");
-    return;
-  }
-  const url = `/api/place_flag?gameId=${currentGameId}&i=${i}&j=${j}`;
+function placeFlag(i, j) {
+  const url = `/api/place_flag?i=${i}&j=${j}`;
   fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
   })
     .then((response) => response.json())
     .then((res) => {
-      //console.log(res);
       render(res);
     })
     .catch((error) => {
-      alert("An error occurred: " + error);
+      console.log("An error occurred: " + error);
+    });
+}
+
+function userQuit() {
+  fetch("/api/user_quit_game", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .then((res) => {
+      greet(userData);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
     });
 }
 

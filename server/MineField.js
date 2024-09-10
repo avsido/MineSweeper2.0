@@ -1,26 +1,23 @@
 class MineField {
   constructor(factor) {
-    this.id = { game: null, user: null };
     this.gameOn = { hasStarted: false, gameOver: false, youWin: false };
     this.time = { t: 0, hasStarted: false, startTime: null };
     this.factor = factor;
     this.rows = null;
     this.cols = null;
+    this.flags = 0;
     if (factor == 0.85) {
       //easy
       this.rows = 8;
       this.cols = 10;
-      this.flags = 12;
     } else if (factor == 0.8) {
       //medium
       this.rows = 10;
       this.cols = 10;
-      this.flags = 15;
     } else if (factor == 0.7) {
       //hard
       this.rows = 12;
       this.cols = 14;
-      this.flags = 22;
     }
 
     this.board = [];
@@ -43,7 +40,10 @@ class MineField {
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
         if (Math.abs(i - x) >= 2 || Math.abs(j - y) >= 2) {
-          this.getCell(i, j).isMine = Math.random() > this.factor ? 1 : 0;
+          if (Math.random() > this.factor) {
+            this.getCell(i, j).isMine = 1;
+            this.flags += 1;
+          }
         }
       }
     }

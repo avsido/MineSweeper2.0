@@ -1,5 +1,4 @@
 function render(gameState) {
-  let currentGameId = gameState.gameId;
   let gameOver = gameState.gameOn.gameOver;
   let cols = gameState.cols;
   let rows = gameState.rows;
@@ -90,7 +89,7 @@ function render(gameState) {
 
       if (!gameOver) {
         cell.onclick = (ev) => {
-          tapSquare(currentGameId, i, j);
+          tapSquare(i, j);
           ev.target.style.pointerEvents = "none";
 
           setTimeout(() => {
@@ -99,7 +98,7 @@ function render(gameState) {
         };
         cell.oncontextmenu = (ev) => {
           ev.preventDefault();
-          placeFlag(currentGameId, i, j);
+          placeFlag(i, j);
           ev.target.style.pointerEvents = "none";
 
           setTimeout(() => {
@@ -111,6 +110,7 @@ function render(gameState) {
         let imgFlag = document.createElement("img");
         imgFlag.src = "images/flag3.png";
         imgFlag.style.backgroundColor = "";
+        imgFlag.style.zIndex = -1;
         cell.appendChild(imgFlag);
         cell.onclick = () => {};
       } else {
@@ -145,7 +145,7 @@ function render(gameState) {
     buttReturn.innerHTML = "RETURN";
     buttReturn.className = "buttReturn";
     buttReturn.onclick = () => {
-      greet(userData);
+      greet(userData.username);
     };
     divConclude.append(pMessage, pTime, buttReturn);
     divMain.appendChild(divConclude);
@@ -158,24 +158,53 @@ function render(gameState) {
 
   let quitButt = document.createElement("button");
   quitButt.innerHTML = "QUIT";
-  quitButt.onclick = () => {};
-  divMain.append(divBoard, quitButt);
+  quitButt.id = "quitButt";
+  quitButt.className = "gameButt";
+  quitButt.onclick = () => {
+    userQuit();
+    return;
+  };
+  divMain.appendChild(divBoard);
 
-  window.addEventListener("beforeunload", (event) => {
-    fetch("/api/page_refreshed_game_lost?currentGameId=" + currentGameId, {
+  const existingQuitButt = document.getElementById("quitButt");
+  if (existingQuitButt && divMain.contains(existingQuitButt)) {
+    divMain.removeChild(existingQuitButt);
+  }
+  divMain.appendChild(quitButt);
+
+  window.addEventListener("beforeunload", () => {
+    fetch("/api/user_left_game_lost", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     })
       .then((response) => response.json())
       .then((res) => {
-        render(res);
+        console.log("user lost");
       })
       .catch((error) => {
         console.error("Error:", error);
       });
 
     sessionStorage.removeItem("hasRefreshed");
+  });
+
+  window.addEventListener("unload", () => {
+    fetch("/api/user_left_game_lost", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+      .then((response) => response.json())
+      .then((res) => {
+        console.log("user lost");
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   });
 }

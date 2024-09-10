@@ -3,7 +3,8 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const mysql = require("mysql2");
 const router = express.Router();
-let games = {};
+const games = {};
+const loggedInUsers = {};
 
 const pool = mysql.createPool({
   host: "localhost",
@@ -18,19 +19,21 @@ const pool = mysql.createPool({
 const query = (sql, params) => {
   return new Promise((resolve, reject) => {
     pool.query(sql, params, (error, results) => {
-      if (error) return reject(error);
+      if (error) {
+        reject(error);
+        return;
+      }
       resolve(results);
     });
   });
-}; //console
+};
 
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res
-      .status(400)
-      .json({ message: "Username and password are required" });
+    res.status(400).json({ message: "Username and password are required" });
+    return;
   }
 
   try {
@@ -39,7 +42,7 @@ router.post("/register", async (req, res) => {
     ]);
 
     if (users.length > 0) {
-      return res.status(409).json({ message: "Username already taken" });
+      res.status(409).json({ message: "Username already taken" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -52,14 +55,19 @@ router.post("/register", async (req, res) => {
       "SELECT id FROM users WHERE username = ? AND password = ?",
       [username, hashedPassword]
     );
-    //console.log(typeof userId[0].id); //////////// access to user ID
-
-    res
-      .status(201)
-      .json({ message: "Registration successful", userId: userId[0].id });
+    if (loggedInUsers[userId[0].id]) {
+      res.status(409).json({ message: "User is already logged in" });
+      return;
+    }
+    loggedInUsers[userId[0].id] = true;
+    // userId[0].id //////////// access to user ID
+    req.session.userId = userId[0].id;
+    req.session.loggedIn = true;
+    res.status(201).json({ message: "success" });
   } catch (error) {
     //console.error("Error during registration:", error);
     res.status(500).json({ message: "Internal server error" });
+    return;
   }
 });
 
@@ -67,9 +75,8 @@ router.post("/signin", async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res
-      .status(400)
-      .json({ message: "Username and password are required" });
+    res.status(400).json({ message: "Username and password are required" });
+    return;
   }
 
   try {
@@ -78,54 +85,76 @@ router.post("/signin", async (req, res) => {
     ]);
 
     if (users.length == 0) {
-      return res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
+      return;
     }
 
     const user = users[0];
+    if (loggedInUsers[user.id]) {
+      res.status(409).json({ message: "User is already signed in" });
+      return;
+    }
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (isMatch) {
-      //console.log(user.id); //////////// access to user ID
+      // user.id //////////// access to user ID
+      loggedInUsers[user.id] = true;
+      req.session.userId = user.id;
+      req.session.loggedIn = true;
+      //games[user.id] = { loggedIn: true, playing: false };
 
-      res.status(200).json({ message: "success", userId: user.id });
+      res.status(200).json({ message: "success" });
     } else {
       res.status(401).json({ message: "Invalid credentials" });
+      return;
     }
   } catch (error) {
     //console.error("Error during sign-in:", error);
     res.status(500).json({ message: "Internal server error" });
+    return;
   }
 });
 
 router.get("/get_past_games", async (req, res) => {
-  const userId = parseInt(req.query.userId);
-  fetchUserGames(res, userId);
+  // const userId = parseInt(req.query.userId);
+  const userId = req.session.userId;
+
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  fetchUserGames(res, req);
 });
 
 router.get("/start_game", async (req, res) => {
   const diff = req.query.diff;
+  const userId = req.session.userId;
 
-  const userId = parseInt(req.query.userId);
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  //const userId = parseInt(req.query.userId);
   if (typeof diff != "string") {
-    return console.log("invalid diffic");
+    console.log("invalid diffic");
+    return;
   }
-  if (!Number.isInteger(userId)) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  } else {
-    try {
-      const [results] = await query(
-        "SELECT COUNT(*) AS count FROM users WHERE id = ?",
-        [userId]
-      );
-      const isValidUserId = results.count > 0;
+  //else {
+  //   try {
+  //     const [results] = await query(
+  //       "SELECT COUNT(*) AS count FROM users WHERE id = ?",
+  //       [userId]
+  //     );
+  //     const isValidUserId = results.count > 0;
 
-      if (!isValidUserId) {
-        //return res.status(401).json({ message: "Invalid credentials" });
-      }
-    } catch (error) {
-      //return console.error("Error querying the database:", error.message);
-    }
-  }
+  //     if (!isValidUserId) {
+  //       res.status(401).json({ message: "Invalid credentials" });
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     console.error("Error querying the database:", error.message);
+  //     return;
+  //   }
 
   let factor;
   // ADD SECURITYYYS
@@ -142,13 +171,11 @@ router.get("/start_game", async (req, res) => {
   try {
     const gameId = Date.now().toString();
     let mineField = new MineField(factor);
-    mineField.id.user = userId;
     games[gameId] = mineField;
-    mineField.id.game = gameId;
+    req.session.gameId = gameId;
 
     res.status(200).json({
       message: `Game started with difficulty factor: ${factor}`,
-      gameId: gameId,
       board: mineField.board,
       gameOn: mineField.gameOn,
       rows: mineField.rows,
@@ -161,21 +188,28 @@ router.get("/start_game", async (req, res) => {
   } catch (error) {
     //console.error("Error starting game:", error);
     res.status(500).json({ message: "Internal server error" });
+    return;
   }
 });
 
 router.get("/tap_square", async (req, res) => {
-  let { gameId, i, j } = req.query;
+  let { i, j } = req.query;
+  const gameId = req.session.gameId;
+  const userId = req.session.userId;
 
   if (!gameId || !games[gameId]) {
-    return res.status(400).json({ message: "Invalid game ID" });
+    res.status(400).json({ message: "Invalid game ID" });
+    return;
   }
 
   i = parseInt(i);
   j = parseInt(j);
 
   if (!validateIorJ(i) || !validateIorJ(j)) {
-    return res.status(200).json({ message: "invalid i or j" });
+    res.status(200).json({ message: "invalid i or j" });
+    // console.log(i);
+    // console.log(j);
+    return;
   }
 
   const mineField = games[gameId];
@@ -188,7 +222,6 @@ router.get("/tap_square", async (req, res) => {
     // HERE I will handle filling the DB in case of LOSS //
     res.status(200).json({
       message: `GAME OVER!`,
-      gameId: gameId,
       gameOver: mineField.gameOn.gameOver,
       board: mineField.board,
       gameOn: mineField.gameOn,
@@ -199,8 +232,8 @@ router.get("/tap_square", async (req, res) => {
     });
     let gameDate = getCurrentDateTime();
     insertUserGame(
-      mineField.id.game,
-      mineField.id.user,
+      gameId,
+      userId,
       gameDate,
       mineField.factor,
       mineField.time.t,
@@ -235,14 +268,14 @@ router.get("/tap_square", async (req, res) => {
   mineField.revealMinesAroundMe(mineField, i, j);
 
   if (mineField.checkWin()) {
-    return setWin(res, mineField, gameId);
+    setWin(res, req, mineField);
+    return;
   }
 
   let pseudoBoard = pseudoizeBoard(mineField.board);
 
   res.status(200).json({
     message: `tapped square`,
-    gameId: gameId,
     board: pseudoBoard,
     gameOn: mineField.gameOn,
     rows: mineField.rows,
@@ -253,13 +286,15 @@ router.get("/tap_square", async (req, res) => {
 });
 
 router.get("/place_flag", async (req, res) => {
-  let { gameId, i, j } = req.query;
+  let { i, j } = req.query;
+  const gameId = req.session.gameId;
 
   i = parseInt(i);
   j = parseInt(j);
 
   if (!gameId || !games[gameId]) {
-    return res.status(400).json({ message: "Invalid Game ID" });
+    res.status(400).json({ message: "Invalid Game ID" });
+    return;
   }
 
   const mineField = games[gameId];
@@ -286,14 +321,14 @@ router.get("/place_flag", async (req, res) => {
   mineField.placeFlag(mineField, i, j);
 
   if (mineField.checkWin()) {
-    return setWin(res, mineField, gameId);
+    setWin(res, req, mineField);
+    return;
   }
 
   let pseudoBoard = pseudoizeBoard(mineField.board);
 
   res.status(200).json({
     message: message,
-    gameId: gameId,
     board: pseudoBoard,
     gameOn: mineField.gameOn,
     rows: mineField.rows,
@@ -303,12 +338,15 @@ router.get("/place_flag", async (req, res) => {
   });
 });
 
-router.post("/page_refreshed_game_lost", async (req, res) => {
+router.post("/user_left_game_lost", async (req, res) => {
   try {
-    let gameId = req.query.currentGameId; // or req.body.currentGameId if using body-parser
-
+    // let gameId = req.query.currentGameId; // or req.body.currentGameId if using body-parser
+    const gameId = req.session.gameId;
+    const userId = req.session.userId;
+    delete loggedInUsers[req.session.userId];
     if (!gameId || !games[gameId]) {
-      return res.status(400).json({ message: "Invalid game ID" });
+      res.status(400).json({ message: "Invalid game ID" });
+      return;
     }
 
     const mineField = games[gameId];
@@ -320,8 +358,8 @@ router.post("/page_refreshed_game_lost", async (req, res) => {
     // HERE I will handle filling the DB in case of LOSS //
     await new Promise((resolve, reject) => {
       insertUserGame(
-        mineField.id.game,
-        mineField.id.user,
+        gameId,
+        userId,
         getCurrentDateTime(),
         mineField.factor,
         mineField.time.t,
@@ -340,7 +378,6 @@ router.post("/page_refreshed_game_lost", async (req, res) => {
 
     res.status(200).json({
       message: `GAME OVER!`,
-      gameId: gameId,
       gameOver: mineField.gameOn.gameOver,
       youWin: mineField.gameOn.youWin,
       board: mineField.board,
@@ -350,52 +387,80 @@ router.post("/page_refreshed_game_lost", async (req, res) => {
       flags: mineField.flags,
       t: mineField.time.t,
     });
+    req.session.destroy((err) => {
+      if (err) {
+        res.status(500).json({ message: "Logout failed" });
+      } else {
+        res.status(200).json({ message: "Logout successful" });
+      }
+    });
   } catch (error) {
-    console.error("Server error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-async function fetchUserGames(res, userId) {
+router.post("/user_quit_game", async (req, res) => {
+  try {
+    const gameId = req.session.gameId;
+    const userId = req.session.userId;
+    if (!gameId || !games[gameId]) {
+      res.status(400).json({ message: "Invalid game ID" });
+      return;
+    }
+
+    const mineField = games[gameId];
+    mineField.gameOn.gameOver = true;
+    const currentTime = new Date().getTime();
+    const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
+    mineField.time.t = t;
+
+    // HERE I will handle filling the DB in case of LOSS //
+    if (mineField.gameOn.hasStarted) {
+      await new Promise((resolve, reject) => {
+        insertUserGame(
+          gameId,
+          userId,
+          getCurrentDateTime(),
+          mineField.factor,
+          mineField.time.t,
+          mineField.gameOn.youWin,
+          (err, results) => {
+            if (err) {
+              //console.error("Failed to insert user game:", err);
+              reject(err);
+            } else {
+              //console.log("Insert successful:", results);
+              resolve(results);
+            }
+          }
+        );
+      });
+    }
+
+    res.status(200).json({
+      message: `quit`,
+    });
+  } catch (error) {
+    //console.error("Server error:", error);
+    res.status(500).json({ message: "Internal server error" });
+    return;
+  }
+});
+
+//benine:
+async function fetchUserGames(res, req) {
+  const userId = req.session.userId;
   try {
     const gameResults = await query(
       "SELECT date_of_occurrence, diff, duration, result FROM user_games WHERE user_id = ? ORDER BY date_of_occurrence DESC",
       [userId]
     );
-    //console.log(gameResults);
     res.status(200).json({ message: "success", gameResults: gameResults });
   } catch (error) {
     // console.error("Error fetching user games:", error);
     // res.status(500).json({ message: "Internal server error" });
+    // return;
   }
-}
-
-function validateIorJ(IorJ) {
-  if (isNaN(IorJ)) {
-    return false;
-  }
-  if (typeof IorJ != "number") {
-    return false;
-  }
-  if (!Number.isInteger(IorJ)) {
-    return false;
-  }
-  return true;
-}
-
-function pseudoizeBoard(board) {
-  // console.log(board);
-  let pseudoBoard = JSON.parse(JSON.stringify(board));
-
-  for (let i = 0; i < board.length; i++) {
-    if (!pseudoBoard[i].checked) {
-      pseudoBoard[i].isMine = 0;
-      pseudoBoard[i].neighborMineCount = 0;
-    }
-  }
-  // console.log(pseudoBoard);
-
-  return pseudoBoard;
 }
 
 function insertUserGame(
@@ -432,19 +497,9 @@ function insertUserGame(
   );
 }
 
-function getCurrentDateTime() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-
-  const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
-  return dateTimeString;
-}
-
-function setWin(res, mineField, gameId) {
+function setWin(res, req, mineField) {
+  const gameId = req.session.gameId;
+  const userId = req.session.userId;
   const currentTime = new Date().getTime();
   const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
   mineField.time.t = t;
@@ -453,7 +508,6 @@ function setWin(res, mineField, gameId) {
   // HERE I will handle filling the DB in case of WIN //
   res.status(200).json({
     message: `YOU WIN!`,
-    gameId: gameId,
     gameOn: mineField.gameOn,
     board: mineField.board,
     rows: mineField.rows,
@@ -463,8 +517,8 @@ function setWin(res, mineField, gameId) {
   });
   let gameDate = getCurrentDateTime();
   insertUserGame(
-    mineField.id.game,
-    mineField.id.user,
+    gameId,
+    userId,
     gameDate,
     mineField.factor,
     mineField.time.t,
@@ -478,5 +532,45 @@ function setWin(res, mineField, gameId) {
     }
   );
 }
+
+function getCurrentDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
+  return dateTimeString;
+}
+
+function pseudoizeBoard(board) {
+  let pseudoBoard = JSON.parse(JSON.stringify(board));
+
+  for (let i = 0; i < board.length; i++) {
+    if (!pseudoBoard[i].checked) {
+      pseudoBoard[i].isMine = 0;
+      pseudoBoard[i].neighborMineCount = 0;
+    }
+  }
+
+  return pseudoBoard;
+}
+
+function validateIorJ(IorJ) {
+  if (isNaN(IorJ)) {
+    return false;
+  }
+  if (typeof IorJ != "number") {
+    return false;
+  }
+  if (!Number.isInteger(IorJ)) {
+    return false;
+  }
+  return true;
+}
+
+function logOutUser() {}
 
 module.exports = router;
