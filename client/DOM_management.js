@@ -70,21 +70,20 @@ function registerUser() {
   })
     .then((response) => response.json())
     .then((res) => {
-      if (res.message !== "success") {
-        //alert("Invalid info: " + res.message);
+      if (res.message != "success") {
+        console.log("Invalid info: " + res.message);
         logUser();
       } else {
-        // userData.userId = res.userId;
+        updateLogInfo(userData.username);
         greet(userData.username);
       }
     })
     .catch((error) => {
-      // console.error("Error:", error);
+      console.log("Error:", error);
     });
 }
 
 function signInUser() {
-  //console.log(userData);
   fetch("/api/signin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -93,16 +92,37 @@ function signInUser() {
   })
     .then((response) => response.json())
     .then((res) => {
-      if (res.message !== "success") {
-        alert(res.message);
+      if (res.message != "success") {
+        console.log(res.message);
         logUser();
       } else {
         userData.userId = res.userId;
+        updateLogInfo(userData.username);
         greet(userData.username);
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
+      console.log("Error:", error);
+    });
+}
+
+function logOut() {
+  fetch("/api/logOut", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .then((res) => {
+      if (res.message != "success") {
+        console.log(res.message);
+      }
+      userData = {};
+      updateLogInfo();
+      logUser();
+    })
+    .catch((error) => {
+      console.log("Error:", error);
     });
 }
 
@@ -126,7 +146,7 @@ function greet(name) {
     mediumButton,
     hardButton
   );
-  divMain.append(divButtonsDifficulty);
+  divMain.appendChild(divButtonsDifficulty);
 }
 
 function createLevelButton(diff) {
@@ -146,17 +166,17 @@ function requestPastGames() {
   })
     .then((response) => {
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        console.log("Network response was not ok");
       }
       return response.json();
     })
     .then((res) => {
-      if (res.message !== "success") {
+      if (res.message != "success") {
         logUser();
       } else if (res.gameResults.length > 0) showPastGames(res.gameResults);
     })
     .catch((error) => {
-      console.error("Error:", error);
+      console.log("Error:", error);
     });
 }
 
@@ -175,7 +195,6 @@ function startGame(diff) {
     .then((response) => response.json())
     .then((res) => {
       render(res);
-      //console.log(res);
       let t = res.t;
       runTime(t);
       intervalId = setInterval(() => {
@@ -189,10 +208,6 @@ function startGame(diff) {
 }
 
 function tapSquare(i, j) {
-  // if (!currentGameId) {
-  //   console.log("No active game!");
-  //   return;
-  // }
   const url = `/api/tap_square?i=${i}&j=${j}`;
   fetch(url, {
     method: "GET",
@@ -238,10 +253,10 @@ function userQuit() {
   })
     .then((response) => response.json())
     .then((res) => {
-      greet(userData);
+      greet(userData.username);
     })
     .catch((error) => {
-      console.error("Error:", error);
+      console.log("Error:", error);
     });
 }
 
@@ -332,8 +347,31 @@ function formatTime(seconds) {
   const formattedMinutes = String(minutes).padStart(2, "0");
   const formattedSeconds = String(remainingSeconds).padStart(2, "0");
 
-  // Determine the time unit (hours or minutes)
   const unit = hours > 0 ? "h" : "m";
 
   return `${formattedHours}${formattedMinutes}:${formattedSeconds}${unit}`;
+}
+
+function updateLogInfo(name = "") {
+  const logInfo = document.getElementById("logInfo");
+  const imgUser = document.getElementById("imgUser");
+  const greeter = document.getElementById("greeter");
+  cleanElement(logInfo);
+  if (name != "") {
+    imgUser.src = "images/logged.png";
+    greeter.innerHTML = "~ " + name;
+    const logoutButt = document.createElement("button");
+    logoutButt.innerHTML = "disconnect";
+    logoutButt.onclick = () => {
+      logOut();
+      logUser();
+      const divPastGames = document.getElementById("divPastGames");
+      cleanElement(divPastGames);
+    };
+    greeter.appendChild(logoutButt);
+  } else {
+    imgUser.src = "images/unlogged.png";
+    greeter.innerHTML = "Hello guest";
+  }
+  logInfo.append(imgUser, greeter);
 }

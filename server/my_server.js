@@ -1,6 +1,6 @@
 const express = require("express");
 const path = require("path");
-const apiRouter = require("./my_api");
+const myapi = require("./my_api");
 const cors = require("cors");
 const session = require("express-session");
 
@@ -28,7 +28,7 @@ app.use(
 
 app.use(express.static(path.join(__dirname, "..", "client")));
 
-app.use("/api", apiRouter);
+app.use("/api", myapi);
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "index.html"));

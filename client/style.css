@@ -5,11 +5,11 @@ body {
     background-position: center; 
     background-repeat: no-repeat; 
     align-items: center;
-    justify-content: center;
     text-align: center;
     display: flex;
     flex-direction: column;
     margin: 0; 
+    padding: 0;
     height: 100vh; 
 }
 
@@ -17,13 +17,55 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center; 
-    height: 10vh; 
+    height: 12vh; 
     text-align: center;
 }
 
 #titleSpan {
     display: flex;
     align-items: center; 
+}
+
+#logInfo{
+    position: absolute;
+    right: 110px;
+    top: 10px;
+    text-align: center;
+    align-items: center;
+    margin: 2px;
+    padding: 5px;
+    justify-content: space-around;
+    background-color: rgb(64 22 22 / 52%);
+    border-radius: 10px;
+    display: flex;
+    width: 175px;
+    height: 60px;
+    
+}
+
+#logInfo p{
+    font-size: 22px;
+    color: white;
+}
+
+#logInfo img{
+    width: 30px;
+    height: 30px;
+}
+
+#logInfo button{
+    border: none;
+    margin: 5px;
+    border-radius: 10px;
+    background-color: none;
+    box-shadow: inset 2px -2px 3px 2px #43443b;
+}
+
+#logInfo button:hover{
+    border: none;
+    margin: 5px;
+    background-color: #a0c711;
+    box-shadow: inset 1px -1px 2px 1px #43443b;
 }
 
 #titleH {
@@ -33,7 +75,7 @@ body {
     color: #eae921;
     display: flex;
     align-items: center; 
-    gap: 10px; 
+    gap: 30px; 
 }
 
 #titleH img {
@@ -113,6 +155,11 @@ body {
     padding: 10px;
     /*border: 2px solid black;*/
     justify-content: space-around;
+    
+}
+
+.input input{
+    box-shadow: inset 2px 4px 2px 2px #CDDC39;
 }
 
 .or{
@@ -220,12 +267,12 @@ th{
 #divPastGames{
     position: absolute;
     right: 10px;
-    top: 122px;
-    background-color: rgb(64 22 22 / 52%);
+    top: 85px;
     text-align: center;
     margin: 5px;
     padding: 5px;
     justify-content: space-around;
+    background-color: rgb(64 22 22 / 52%);
     border-radius: 10px;
     max-height: 500px;
     overflow-y: auto; 

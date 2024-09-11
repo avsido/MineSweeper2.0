@@ -183,6 +183,7 @@ function render(gameState) {
       .then((response) => response.json())
       .then((res) => {
         console.log("user lost");
+        logOut();
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -202,6 +203,7 @@ function render(gameState) {
       .then((response) => response.json())
       .then((res) => {
         console.log("user lost");
+        logOut();
       })
       .catch((error) => {
         console.error("Error:", error);
