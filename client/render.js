@@ -38,7 +38,9 @@ function render(gameState) {
       let cell = document.createElement("div");
       cell.className = "cell";
       cell.innerHTML =
-        currentCell.isMine == 0 && currentCell.neighborMineCount > 0
+        currentCell.isMine == 0 &&
+        currentCell.neighborMineCount > 0 &&
+        !currentCell.flagged
           ? currentCell.neighborMineCount + ""
           : "";
       switch (currentCell.neighborMineCount) {
@@ -76,7 +78,7 @@ function render(gameState) {
             : "rgba(255, 127, 80, 0.5)";
         cell.onmouseover = (ev) => {
           if (!currentCell.flagged) {
-            ev.target.style.backgroundColor = "#96ca51";
+            ev.target.style.backgroundColor = "red";
           }
         };
         cell.onmouseout = (ev) => {

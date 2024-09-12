@@ -107,7 +107,7 @@ function signInUser() {
 }
 
 function logOut() {
-  fetch("/api/logOut", {
+  fetch("/api/logout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -265,6 +265,7 @@ function runTime(t) {
   if (clock) {
     clock.innerHTML = "time: " + t + "s";
   }
+  delete clock;
 }
 
 function showPastGames(gamesInfo) {
@@ -363,10 +364,9 @@ function updateLogInfo(name = "") {
     const logoutButt = document.createElement("button");
     logoutButt.innerHTML = "disconnect";
     logoutButt.onclick = () => {
-      logOut();
-      logUser();
       const divPastGames = document.getElementById("divPastGames");
       cleanElement(divPastGames);
+      logOut();
     };
     greeter.appendChild(logoutButt);
   } else {

@@ -86,6 +86,7 @@ router.post("/signin", async (req, res) => {
       res.status(404).json({ message: "User not found" });
       return;
     }
+    // console.log(loggedInUsers);
 
     const user = users[0];
     if (loggedInUsers[user.id]) {
@@ -190,41 +191,7 @@ router.get("/tap_square", async (req, res) => {
   const mineField = games[gameId];
 
   if (mineField.getCell(i, j).isMine == 1) {
-    mineField.gameOn.gameOver = true;
-    const currentTime = new Date().getTime();
-    const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
-    mineField.time.t = t;
-    res.status(200).json({
-      message: `GAME OVER!`,
-      gameOver: mineField.gameOn.gameOver,
-      board: mineField.board,
-      gameOn: mineField.gameOn,
-      rows: mineField.rows,
-      cols: mineField.cols,
-      flags: mineField.flags,
-      t: mineField.time.t,
-    });
-    let gameDate = getCurrentDateTime();
-    insertUserGame(
-      gameId,
-      userId,
-      gameDate,
-      mineField.factor,
-      mineField.time.t,
-      mineField.gameOn.youWin,
-      (err, results) => {
-        if (err) {
-          console.log("Failed to insert user game:", err);
-        } else {
-          console.log("Insert successful:", results);
-        }
-      }
-    );
-
-    // if (games[userId]) {
-    //   delete loggedInUsers[userId];
-    // }
-
+    setLose(res, req, mineField);
     return;
   }
   if (mineField.getCell(i, j).flagged) {
@@ -352,7 +319,7 @@ router.post("/user_quit_game", async (req, res) => {
         );
       });
     }
-
+    deleteGame(gameId);
     res.status(200).json({
       message: `quit`,
     });
@@ -369,7 +336,8 @@ router.post("/user_left_game_lost", async (req, res) => {
     const userId = req.session.userId;
 
     if (!gameId || !games[gameId]) {
-      return res.status(400).json({ message: "Invalid game" });
+      res.status(400).json({ message: "Invalid game" });
+      return;
     }
     const mineField = games[gameId];
     mineField.gameOn.gameOver = true;
@@ -400,9 +368,8 @@ router.post("/user_left_game_lost", async (req, res) => {
       });
     }
 
-    if (loggedInUsers[userId]) {
-      delete loggedInUsers[userId];
-    }
+    deleteGame(gameId);
+    deleteUser(userId);
 
     const gameOverResponse = {
       message: `GAME OVER!`,
@@ -435,52 +402,28 @@ router.post("/user_left_game_lost", async (req, res) => {
 router.post("/logout", async (req, res) => {
   const gameId = req.session.gameId;
   const userId = req.session.userId;
-  if (!gameId || !games[gameId]) {
-    res.status(400).json({ message: "Invalid game" });
-    return;
-  }
-
-  if (!userId) {
-    res.status(400).json({ message: "No user is currently logged in" });
-    return;
-  }
+  console.log("gameId (logout)", typeof gameId);
+  console.log("userId (logout)", typeof userId);
 
   try {
     const mineField = games[gameId];
+    //console.log("MineField object:", mineField);
+
     if (mineField) {
       if (mineField.gameOn.hasStarted && !mineField.gameOn.gameOver) {
-        mineField.gameOn.gameOver = true;
-        const currentTime = new Date().getTime();
-        const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
-        mineField.time.t = t;
-        await new Promise((resolve, reject) => {
-          insertUserGame(
-            gameId,
-            userId,
-            getCurrentDateTime(),
-            mineField.factor,
-            mineField.time.t,
-            mineField.gameOn.youWin,
-            (err, results) => {
-              if (err) {
-                console.log("Failed to insert user game:", err);
-                reject(err);
-              } else {
-                console.log("Insert successful:", results);
-                resolve(results);
-              }
-            }
-          );
-        });
+        setLose(res, req, mineField);
+        return;
       }
     }
 
-    if (loggedInUsers[userId]) {
-      delete loggedInUsers[userId];
-    }
+    console.log("Before deleting game and user:", loggedInUsers);
+    deleteGame(gameId);
+    deleteUser(userId);
+    console.log("After deleting game and user:", loggedInUsers);
 
     req.session.destroy((err) => {
       if (err) {
+        console.log("Error destroying session:", err);
         res.status(500).json({ message: "Log out failed" });
         return;
       }
@@ -488,6 +431,7 @@ router.post("/logout", async (req, res) => {
       res.status(200).json({ message: "Logout successful" });
     });
   } catch (error) {
+    console.log("Catch block error:", error);
     res.status(500).json({ message: "Internal server error" });
     return;
   }
@@ -569,10 +513,48 @@ function setWin(res, req, mineField) {
       if (err) {
         console.error("Failed to insert user game:", err);
       } else {
-        console.log("Insert successfullll:", results);
+        //console.log("Insert successfullll:", results);
+        console.log("Insert successfullll");
       }
     }
   );
+  deleteGame(gameId);
+}
+
+function setLose(res, req, mineField) {
+  const gameId = req.session.gameId;
+  const userId = req.session.userId;
+  const currentTime = new Date().getTime();
+  const t = Math.floor((currentTime - mineField.time.startTime) / 1000);
+  mineField.time.t = t;
+  mineField.gameOn.gameOver = true;
+  res.status(200).json({
+    message: `GAME OVER!`,
+    gameOn: mineField.gameOn,
+    board: mineField.board,
+    rows: mineField.rows,
+    cols: mineField.cols,
+    flags: mineField.flags,
+    t: mineField.time.t,
+  });
+  let gameDate = getCurrentDateTime();
+  insertUserGame(
+    gameId,
+    userId,
+    gameDate,
+    mineField.factor,
+    mineField.time.t,
+    mineField.gameOn.youWin,
+    (err, results) => {
+      if (err) {
+        console.error("Failed to insert user game:", err);
+      } else {
+        //console.log("Insert successfullll:", results);
+        console.log("Insert successfullll");
+      }
+    }
+  );
+  deleteGame(gameId);
 }
 
 function getCurrentDateTime() {
@@ -611,6 +593,20 @@ function validateIorJ(IorJ) {
     return false;
   }
   return true;
+}
+
+function deleteGame(gameId) {
+  if (games.hasOwnProperty(gameId)) {
+    delete games[gameId];
+    console.log("deleted game: " + gameId);
+  }
+}
+
+function deleteUser(userId) {
+  if (loggedInUsers.hasOwnProperty(userId)) {
+    delete loggedInUsers[userId];
+    console.log("deleted user: " + userId);
+  }
 }
 
 module.exports = router;
