@@ -148,12 +148,15 @@ body {
     justify-content: center;
 }
 
+.gameButt:hover{
+    color: rgb(184, 6, 36);
+}
+
 .input{
     width: auto;
     display: flex;
     flex-direction: row;
     padding: 10px;
-    /*border: 2px solid black;*/
     justify-content: space-around;
     
 }
@@ -214,6 +217,7 @@ body {
     padding: 0;
     font-weight: bolder;
     font-family:fantasy;
+    box-sizing: border-box;
 }
 .cell-hover {
     background-color: red;

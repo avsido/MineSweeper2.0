@@ -69,6 +69,8 @@ function render(gameState) {
       if (currentCell.checked) {
         cell.style.backgroundColor =
           i == j || (i + j) % 2 == 0 ? "beige" : "lightgreen";
+        drawBoldBorder(cell, board, i, j, rows, cols);
+        cell.style.zIndex = "1";
       } else {
         cell.style.backgroundColor =
           i == j || (i + j) % 2 == 0
@@ -76,7 +78,7 @@ function render(gameState) {
             : "rgba(255, 127, 80, 0.5)";
         cell.onmouseover = (ev) => {
           if (!currentCell.flagged) {
-            ev.target.style.backgroundColor = "red";
+            ev.target.style.backgroundColor = "rgba(1, 1, 1, 0)";
           }
         };
         cell.onmouseout = (ev) => {
