@@ -76,7 +76,7 @@ function render(gameState) {
             : "rgba(255, 127, 80, 0.5)";
         cell.onmouseover = (ev) => {
           if (!currentCell.flagged) {
-            ev.target.style.backgroundColor = "#96ca51";
+            ev.target.style.backgroundColor = "red";
           }
         };
         cell.onmouseout = (ev) => {
@@ -171,42 +171,4 @@ function render(gameState) {
     divMain.removeChild(existingQuitButt);
   }
   divMain.appendChild(quitButt);
-
-  window.addEventListener("beforeunload", () => {
-    fetch("/api/user_left_game_lost", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((response) => response.json())
-      .then((res) => {
-        console.log("user lost");
-        logOut();
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-
-    sessionStorage.removeItem("hasRefreshed");
-  });
-
-  window.addEventListener("unload", () => {
-    fetch("/api/user_left_game_lost", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((response) => response.json())
-      .then((res) => {
-        console.log("user lost");
-        logOut();
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  });
 }

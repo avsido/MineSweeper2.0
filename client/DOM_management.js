@@ -106,26 +106,6 @@ function signInUser() {
     });
 }
 
-function logOut() {
-  fetch("/api/logOut", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((res) => {
-      if (res.message != "success") {
-        console.log(res.message);
-      }
-      userData = {};
-      updateLogInfo();
-      logUser();
-    })
-    .catch((error) => {
-      console.log("Error:", error);
-    });
-}
-
 function greet(name) {
   cleanElement(divMain);
   requestPastGames();
@@ -194,6 +174,13 @@ function startGame(diff) {
   })
     .then((response) => response.json())
     .then((res) => {
+      window.addEventListener("beforeunload", () => {
+        logOut();
+      });
+
+      window.addEventListener("unload", () => {
+        logOut();
+      });
       render(res);
       let t = res.t;
       runTime(t);
@@ -374,4 +361,41 @@ function updateLogInfo(name = "") {
     greeter.innerHTML = "Hello guest";
   }
   logInfo.append(imgUser, greeter);
+}
+
+// function logOutAndLoseGame() {
+//   fetch("/api/log_out_and_lose_game", {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     credentials: "include",
+//   })
+//     .then((response) => response.json())
+//     .then(() => {
+//       userData = {};
+//       logOut();
+//     })
+//     .catch((error) => {
+//       console.log("Error:", error);
+//     });
+// }
+function logOut() {
+  fetch("/api/log_out", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .then((res) => {
+      if (res.message != "success") {
+        console.log(res.message);
+      }
+      userData = {};
+      updateLogInfo();
+      logUser();
+    })
+    .catch((error) => {
+      console.log("Error:", error);
+    });
 }
