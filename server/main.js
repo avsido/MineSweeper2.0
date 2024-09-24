@@ -1,1 +1,1 @@
-require("./my_server"); // Import and start the server
+require("./my_server");

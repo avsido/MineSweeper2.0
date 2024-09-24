@@ -110,11 +110,11 @@ function render(gameState) {
       }
       if (currentCell.flagged) {
         let imgFlag = document.createElement("img");
-        imgFlag.src = "images/flag3.png";
-        imgFlag.style.backgroundColor = "";
-        imgFlag.style.zIndex = -1;
+        imgFlag.src = "images/flag5.png";
+        imgFlag.style.backgroundColor = "transparent";
         cell.appendChild(imgFlag);
         cell.onclick = () => {};
+        cell.onhover = () => {};
       } else {
         if (currentCell.isMine == 1) {
           let imgMine = document.createElement("img");
