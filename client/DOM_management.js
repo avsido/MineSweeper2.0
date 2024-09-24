@@ -106,26 +106,6 @@ function signInUser() {
     });
 }
 
-function logOut() {
-  fetch("/api/logout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((res) => {
-      if (res.message != "success") {
-        console.log(res.message);
-      }
-      userData = {};
-      updateLogInfo();
-      logUser();
-    })
-    .catch((error) => {
-      console.log("Error:", error);
-    });
-}
-
 function greet(name) {
   cleanElement(divMain);
   requestPastGames();
@@ -194,6 +174,13 @@ function startGame(diff) {
   })
     .then((response) => response.json())
     .then((res) => {
+      window.addEventListener("beforeunload", () => {
+        logOut();
+      });
+
+      window.addEventListener("unload", () => {
+        logOut();
+      });
       render(res);
       let t = res.t;
       runTime(t);
@@ -265,7 +252,6 @@ function runTime(t) {
   if (clock) {
     clock.innerHTML = "time: " + t + "s";
   }
-  delete clock;
 }
 
 function showPastGames(gamesInfo) {
@@ -364,9 +350,10 @@ function updateLogInfo(name = "") {
     const logoutButt = document.createElement("button");
     logoutButt.innerHTML = "disconnect";
     logoutButt.onclick = () => {
+      logOut();
+      logUser();
       const divPastGames = document.getElementById("divPastGames");
       cleanElement(divPastGames);
-      logOut();
     };
     greeter.appendChild(logoutButt);
   } else {
@@ -374,4 +361,24 @@ function updateLogInfo(name = "") {
     greeter.innerHTML = "Hello guest";
   }
   logInfo.append(imgUser, greeter);
+}
+
+function logOut() {
+  fetch("/api/log_out", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .then((res) => {
+      if (res.message != "success") {
+        console.log(res.message);
+      }
+      userData = {};
+      updateLogInfo();
+      logUser();
+    })
+    .catch((error) => {
+      console.log("Error:", error);
+    });
 }

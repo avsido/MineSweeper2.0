@@ -71,6 +71,8 @@ function render(gameState) {
       if (currentCell.checked) {
         cell.style.backgroundColor =
           i == j || (i + j) % 2 == 0 ? "beige" : "lightgreen";
+        drawBoldBorder(cell, board, i, j, rows, cols);
+        cell.style.zIndex = "1";
       } else {
         cell.style.backgroundColor =
           i == j || (i + j) % 2 == 0
@@ -78,7 +80,7 @@ function render(gameState) {
             : "rgba(255, 127, 80, 0.5)";
         cell.onmouseover = (ev) => {
           if (!currentCell.flagged) {
-            ev.target.style.backgroundColor = "red";
+            ev.target.style.backgroundColor = "rgba(1, 1, 1, 0)";
           }
         };
         cell.onmouseout = (ev) => {
@@ -110,11 +112,11 @@ function render(gameState) {
       }
       if (currentCell.flagged) {
         let imgFlag = document.createElement("img");
-        imgFlag.src = "images/flag3.png";
-        imgFlag.style.backgroundColor = "";
-        imgFlag.style.zIndex = -1;
+        imgFlag.src = "images/flag5.png";
+        imgFlag.style.backgroundColor = "transparent";
         cell.appendChild(imgFlag);
         cell.onclick = () => {};
+        cell.onhover = () => {};
       } else {
         if (currentCell.isMine == 1) {
           let imgMine = document.createElement("img");
@@ -173,42 +175,4 @@ function render(gameState) {
     divMain.removeChild(existingQuitButt);
   }
   divMain.appendChild(quitButt);
-
-  window.addEventListener("beforeunload", () => {
-    fetch("/api/user_left_game_lost", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((response) => response.json())
-      .then((res) => {
-        console.log("user lost");
-        logOut();
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-
-    sessionStorage.removeItem("hasRefreshed");
-  });
-
-  window.addEventListener("unload", () => {
-    fetch("/api/user_left_game_lost", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((response) => response.json())
-      .then((res) => {
-        console.log("user lost");
-        logOut();
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  });
 }

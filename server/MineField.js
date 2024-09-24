@@ -31,7 +31,6 @@ class MineField {
       });
     }
     this.resetGame();
-    //this.startGame();
   }
 
   startGame(x, y) {
@@ -89,7 +88,7 @@ class MineField {
       mineField.getCell(i, j).checked = true;
     if (
       mineField.getCell(i, j).neighborMineCount > 0 ||
-      !mineField.isShouldReveal(mineField, i, j)
+      !mineField.shouldBeRevealed(mineField, i, j)
     )
       return;
     if (i > 0 && j > 0) mineField.revealMinesAroundMe(mineField, i - 1, j - 1);
@@ -105,7 +104,7 @@ class MineField {
       mineField.revealMinesAroundMe(mineField, i + 1, j - 1);
   }
 
-  isShouldReveal(mineField, i, j) {
+  shouldBeRevealed(mineField, i, j) {
     let rows = mineField.rows;
     let cols = mineField.cols;
 
