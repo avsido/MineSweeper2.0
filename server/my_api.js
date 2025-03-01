@@ -9,7 +9,7 @@ const loggedInUsers = {};
 const pool = mysql.createPool({
   host: "localhost",
   user: "root",
-  password: "outPut1!",
+  password: "xxxxxx",
   database: "user_auth",
   waitForConnections: true,
   connectionLimit: 10,
